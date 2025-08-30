@@ -1,2 +1,0 @@
-This is a test file to verify the correct Git author configuration.
-Created to ensure commits use vaibhavtushar19@gmail.com as the author.
