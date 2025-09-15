@@ -1,11 +1,11 @@
-import connect from "@/lib/db";
+import dbConnect from "@/lib/db";
 import User from "@/models/User";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 12;
 
-connect();
+await dbConnect();
 
 export async function POST(request: NextRequest) {
   try {
