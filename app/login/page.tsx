@@ -76,7 +76,9 @@ export default function AuthPage() {
         });
 
         if (result?.error) {
-          setError("Registration successful, but sign in failed. Please try logging in.");
+          setError(
+            "Registration successful, but sign in failed. Please try logging in."
+          );
         } else {
           const session = await getSession();
           if (session) {
@@ -233,8 +235,12 @@ export default function AuthPage() {
                 className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg text-base"
               >
                 {isLoading
-                  ? (mode === "signup" ? "Creating account..." : "Signing in...")
-                  : (mode === "signup" ? "Create Account" : "Sign In")}
+                  ? mode === "signup"
+                    ? "Creating account..."
+                    : "Signing in..."
+                  : mode === "signup"
+                  ? "Create Account"
+                  : "Sign In"}
               </Button>
 
               {/* Divider */}
@@ -282,7 +288,9 @@ export default function AuthPage() {
               </div>
             </form>
             <p className="text-center text-sm text-gray-600 w-full mt-6">
-              {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
+              {mode === "signup"
+                ? "Already have an account?"
+                : "Don't have an account?"}{" "}
               <button
                 type="button"
                 onClick={() => {

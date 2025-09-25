@@ -1,0 +1,7 @@
+Yes I would like to use your recommendations for now
+1. Server Components with auth() for SSR pages
+2. Protected Route Component for client-side protection
+3. API Route Protection for backend endpoints
+4. Axios Interceptors for API call management
+
+Guide me through this process and also tell me the path and file name where I should make the files

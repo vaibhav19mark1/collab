@@ -1,6 +1,5 @@
-import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
- 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [Google],
-})
+import NextAuth from "next-auth";
+import { authOptions } from "./app/api/auth/[...nextauth]/options";
+
+// Export the NextAuth configuration for server-side usage
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
