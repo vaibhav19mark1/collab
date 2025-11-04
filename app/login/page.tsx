@@ -42,13 +42,18 @@ export default function AuthPage() {
           setIsLoading(false);
           return;
         }
+        if (!formData.email.trim()) {
+          setError("Email is required");
+          setIsLoading(false);
+          return;
+        }
         if (formData.password.length < 6) {
           setError("Password must be at least 6 characters");
           setIsLoading(false);
           return;
         }
 
-        // Handle signup
+        // Handle signup via custom registration endpoint
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
@@ -56,7 +61,7 @@ export default function AuthPage() {
           },
           body: JSON.stringify({
             username: formData.username.trim(),
-            email: formData.email,
+            email: formData.email.trim(),
             password: formData.password,
           }),
         });
@@ -68,42 +73,67 @@ export default function AuthPage() {
           return;
         }
 
-        // After successful registration, automatically sign in
-        const result = await signIn("credentials", {
-          email: formData.email,
+        // After successful registration, automatically sign in using NextAuth
+        const signInResult = await signIn("credentials", {
+          email: formData.email.trim(),
           password: formData.password,
           redirect: false,
         });
 
-        if (result?.error) {
+        if (signInResult?.error) {
           setError(
-            "Registration successful, but sign in failed. Please try logging in."
+            "Registration successful, but automatic sign in failed. Please try logging in manually."
           );
-        } else {
-          const session = await getSession();
-          if (session) {
-            router.push("/dashboard");
-          }
+        } else if (signInResult?.ok) {
+          // Successfully signed in, redirect to dashboard
+          router.push("/dashboard");
         }
       } else {
-        // Handle login
+        // Handle login using NextAuth
+        const { email, password } = formData;
+        
+        if (!email.trim() || !password) {
+          setError("Please enter both email and password");
+          setIsLoading(false);
+          return;
+        }
+
         const result = await signIn("credentials", {
-          email: formData.email,
-          password: formData.password,
+          email: email.trim(),
+          password,
           redirect: false,
         });
 
         if (result?.error) {
-          setError("Invalid credentials");
-        } else {
-          const session = await getSession();
-          if (session) {
-            router.push("/dashboard");
-          }
+          setError("Invalid email or password");
+        } else if (result?.ok) {
+          // Successfully signed in, redirect to dashboard
+          router.push("/dashboard");
         }
       }
-    } catch {
-      setError(mode === "signup" ? "Registration failed" : "Sign in failed");
+    } catch (error) {
+      console.error("Auth error:", error);
+      setError(mode === "signup" ? "Registration failed. Please try again." : "Sign in failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      const result = await signIn("google", {
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
+      
+      if (result?.error) {
+        setError("Google sign-in failed");
+      } else if (result?.url) {
+        router.push(result.url);
+      }
+    } catch (error) {
+      setError("Google sign-in failed");
     } finally {
       setIsLoading(false);
     }
@@ -260,6 +290,8 @@ export default function AuthPage() {
                 <Button
                   type="button"
                   variant="outline"
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
                   className="col-span-1 h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-base"
                 >
                   <Image

@@ -1,97 +1,103 @@
-import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/lib/db'
-import User from '@/models/User'
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import dbConnect from "@/lib/db";
+import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, username, email, password } = await request.json()
+    await dbConnect();
+    
+    const { username, email, password } = await request.json();
 
-    // Validation
+    // Validate input
     if (!username || !email || !password) {
       return NextResponse.json(
-        { error: 'Username, email, and password are required' },
+        { error: "All fields are required" },
         { status: 400 }
-      )
+      );
+    }
+
+    if (username.length < 2) {
+      return NextResponse.json(
+        { error: "Username must be at least 2 characters" },
+        { status: 400 }
+      );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: "Password must be at least 6 characters" },
         { status: 400 }
-      )
+      );
     }
 
-    // Connect to database
-    await connectDB()
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
+        { status: 400 }
+      );
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
-    })
+      $or: [{ email }, { username }],
+    });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email or username already exists' },
-        { status: 400 }
-      )
-    }
-
-    // Create new user
-    const userData: {
-      name?: string;
-      username: string;
-      email: string;
-      password: string;
-    } = {
-      username,
-      email,
-      password,
-    }
-    
-    if (name) {
-      userData.name = name
-    }
-    
-    const user = await User.create(userData)
-
-    // Return success response (without password)
-    return NextResponse.json({
-      success: true,
-      message: 'User created successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
+      if (existingUser.email === email) {
+        return NextResponse.json(
+          { error: "An account with this email already exists" },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: "This username is already taken" },
+          { status: 400 }
+        );
       }
-    }, { status: 201 })
-
-  } catch (error) {
-    console.error('Registration error:', error)
-    
-    // Handle mongoose validation errors
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'ValidationError') {
-      const validationError = error as unknown as { errors: Record<string, { message: string }> }
-      const messages = Object.values(validationError.errors).map((err) => err.message)
-      return NextResponse.json(
-        { error: messages.join(', ') },
-        { status: 400 }
-      )
     }
 
-    // Handle duplicate key errors
-    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
-      const duplicateError = error as unknown as { keyPattern: Record<string, unknown> }
-      const field = Object.keys(duplicateError.keyPattern)[0]
-      return NextResponse.json(
-        { error: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists` },
-        { status: 400 }
-      )
-    }
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create user
+    const user = await User.create({
+      username: username.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      isVerified: true, // Set to true for now, implement email verification later if needed
+    });
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        message: "User created successfully", 
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          isVerified: user.isVerified
+        }
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+      return NextResponse.json(
+        { error: validationErrors.join(', ') },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: "Internal server error. Please try again." },
       { status: 500 }
-    )
+    );
   }
 }

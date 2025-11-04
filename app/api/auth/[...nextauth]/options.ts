@@ -1,74 +1,175 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthConfig } from "next-auth";
+import Google from "next-auth/providers/google";
 import dbConnect from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import Google from "next-auth/providers/google";
 
-const authOptions: NextAuthConfig = {
+export const authOptions = {
   providers: [
     CredentialsProvider({
-      name: "Creadentials",
+      name: "Credentials",
       id: "credentials",
       credentials: {
         email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      async authorize(credentials: any): Promise<any> {
-        await dbConnect();
+      async authorize(credentials: any) {
         try {
-          const user = await User.findOne({
+          await dbConnect();
+          console.log("Database connected successfully");
+
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("Email and password are required");
+          }
+
+          const user = (await User.findOne({
             $or: [
               {
-                email: credentials?.identifier,
-              },
-              {
-                username: credentials?.identifier,
+                email: credentials?.email,
               },
             ],
-          });
+          }).lean()) as any;
+
           // user not found
           if (!user) throw new Error("User not found");
           // user not verified
-          if (!user.verified)
-            throw new Error("Please verify your email to login");
+          // if (!user.verified)
+          //   throw new Error("Please verify your email to login");
 
           const isPasswordValid = await bcrypt.compare(
             credentials?.password,
             user.password
           );
           if (!isPasswordValid) throw new Error("Invalid password");
-          return user;
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            username: user.username || "",
+            name: user.name || user.username || "",
+            isVerified: user.isVerified ?? true,
+          };
         } catch (error: any) {
-          throw new Error(error);
+          console.error("Auth error:", error);
+          return null;
         }
       },
     }),
-    Google,
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
+    }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
   },
   pages: {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({
+      token,
+      user,
+      account,
+    }: {
+      token: any;
+      user: any;
+      account: any;
+    }) {
       if (user) {
-        token._id = user._id?.toString();
-        token.username = user.username;
-        token.isVerified = user.isVerified;
+        token._id = user.id;
+        token.username = user.username || user.email?.split("@")[0];
+        token.isVerified = user.isVerified ?? true;
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token) {
+    async session({ session, token }: { session: any; token: any }) {
+      if (session?.user && token) {
         session.user._id = token._id as string;
         session.user.username = token.username as string;
         session.user.isVerified = token.isVerified as boolean;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
       }
       return session;
     },
-  },
-};
+    async signIn({
+      user,
+      account,
+      profile,
+    }: {
+      user: any;
+      account: any;
+      profile?: any;
+    }) {
+      try {
+        // Allow all credential logins (handled by authorize function)
+        if (account?.provider === "credentials") {
+          return true;
+        }
 
-export { authOptions };
+        // Handle Google OAuth sign-in
+        if (account?.provider === "google") {
+          await dbConnect();
+
+          // Check if user already exists with this email
+          let existingUser = await User.findOne({ email: user.email });
+
+          if (existingUser) {
+            // User exists, update their info if needed
+            if (!existingUser.googleId) {
+              existingUser.googleId = account.providerAccountId;
+              await existingUser.save();
+            }
+            // Update user object with existing user data
+            user.id = existingUser._id.toString();
+            user.username = existingUser.username;
+            user.isVerified = existingUser.isVerified;
+            return true;
+          } else {
+            // Generate unique username from email
+            let username = user.email.split("@")[0].toLowerCase();
+
+            // Check if username exists and make it unique
+            const usernameExists = await User.findOne({ username });
+            if (usernameExists) {
+              username = `${username}${Math.floor(Math.random() * 10000)}`;
+            }
+
+            // Create new user for Google sign-in
+            const newUser = await User.create({
+              email: user.email,
+              name: user.name || username,
+              username: username,
+              googleId: account.providerAccountId,
+              isVerified: true,
+            });
+
+            // Update user object with new user data
+            user.id = newUser._id.toString();
+            user.username = newUser.username;
+            user.isVerified = newUser.isVerified;
+            return true;
+          }
+        }
+
+        return true;
+      } catch (error) {
+        console.error("SignIn callback error:", error);
+        // Return true to avoid blocking the sign-in, but log the error
+        return true;
+      }
+    },
+  },
+  secret: process.env.AUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
+};

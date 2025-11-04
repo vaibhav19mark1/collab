@@ -7,6 +7,8 @@ export interface User extends Document {
   password?: string;
   email: string;
   avatar?: string;
+  googleId?: string;
+  isVerified?: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword: (password: string) => Promise<boolean>;
@@ -35,8 +37,19 @@ const userSchema = new Schema<User>(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: function(this: User) {
+        // Password is required only if googleId is not present
+        return !this.googleId;
+      },
       minlength: [6, "Password must be at least 6 characters"],
+    },
+    googleId: {
+      type: String,
+      sparse: true, // Allows multiple documents without googleId
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
     },
     avatar: {
       type: String,

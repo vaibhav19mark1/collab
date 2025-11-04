@@ -7,14 +7,13 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  console.log({ session, status });
 
   useEffect(() => {
     if (status === "loading") return;
     if (session) {
       router.push("/dashboard");
     } else {
-      router.push("/auth/login");
+      router.push("/login");
     }
   }, [session, status]);
 

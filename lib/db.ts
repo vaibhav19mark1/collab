@@ -1,44 +1,44 @@
 import mongoose from "mongoose";
 
-interface GlobalWithMongoose {
-  mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-  };
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI environment variable");
 }
 
-declare const global: GlobalWithMongoose;
-
-let cached = global.mongoose;
+let cached = (global as any).mongoose;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
-const dbConnect = async () => {
+async function dbConnect() {
   if (cached.conn) {
-    console.log("Using cached connection");
+    console.log("Using cached database connection");
     return cached.conn;
   }
 
   if (!cached.promise) {
-    const options = {
+    const opts = {
       bufferCommands: false,
     };
-    console.log("Using cached promise");
-    cached.promise = mongoose.connect(process.env.MONGODB_URI!, options);
+
+    console.log("Creating new database connection...");
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+      console.log("Database connected successfully");
+      return mongoose;
+    });
   }
 
   try {
     cached.conn = await cached.promise;
-    console.log("MongoDB connected");
-  } catch (error) {
+  } catch (e) {
     cached.promise = null;
-    console.error("MongoDB connection error:", error);
-    throw error;
+    console.error("Database connection failed:", e);
+    throw e;
   }
 
   return cached.conn;
-};
+}
 
 export default dbConnect;

@@ -1,23 +1,23 @@
-'use client'
+"use client";
 
-import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { User, Mail, LogOut } from 'lucide-react'
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User, Mail, LogOut } from "lucide-react";
 
 export default function Dashboard() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
+    if (status === "unauthenticated") {
+      router.push("/login");
     }
-  }, [status, router])
+  }, [status, router]);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center">
         <div className="text-center">
@@ -25,11 +25,11 @@ export default function Dashboard() {
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!session) {
-    return null
+    return null;
   }
 
   return (
@@ -50,10 +50,10 @@ export default function Dashboard() {
               <span className="text-sm text-gray-700">
                 Welcome, {session.user?.name}
               </span>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => signOut({ callbackUrl: "/" })}
                 className="flex items-center gap-2"
               >
                 <LogOut className="h-4 w-4" />
@@ -68,7 +68,6 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
             {/* User Profile Card */}
             <Card className="shadow-xl border-0">
               <CardHeader>
@@ -79,22 +78,32 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Name</label>
+                  <label className="text-sm font-medium text-gray-500">
+                    Name
+                  </label>
                   <p className="text-lg text-gray-900">{session.user?.name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Username</label>
-                  <p className="text-lg text-gray-900">@{session.user?.username || 'N/A'}</p>
+                  <label className="text-sm font-medium text-gray-500">
+                    Username
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    @{session.user?.username || "N/A"}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
+                  <label className="text-sm font-medium text-gray-500">
+                    Email
+                  </label>
                   <p className="text-lg text-gray-900 flex items-center gap-2">
                     <Mail className="h-4 w-4 text-gray-400" />
                     {session.user?.email}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">User ID</label>
+                  <label className="text-sm font-medium text-gray-500">
+                    User ID
+                  </label>
                   <p className="text-xs text-gray-600 font-mono break-all">
                     {session.user?.id}
                   </p>
@@ -131,26 +140,33 @@ export default function Dashboard() {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span className="text-sm">Text Editor</span>
-                  <span className="text-xs text-green-600 font-medium">Coming Soon</span>
+                  <span className="text-xs text-green-600 font-medium">
+                    Coming Soon
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span className="text-sm">Code Editor</span>
-                  <span className="text-xs text-green-600 font-medium">Coming Soon</span>
+                  <span className="text-xs text-green-600 font-medium">
+                    Coming Soon
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span className="text-sm">Whiteboard</span>
-                  <span className="text-xs text-green-600 font-medium">Coming Soon</span>
+                  <span className="text-xs text-green-600 font-medium">
+                    Coming Soon
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span className="text-sm">Real-time Chat</span>
-                  <span className="text-xs text-green-600 font-medium">Coming Soon</span>
+                  <span className="text-xs text-green-600 font-medium">
+                    Coming Soon
+                  </span>
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
       </main>
     </div>
-  )
+  );
 }
