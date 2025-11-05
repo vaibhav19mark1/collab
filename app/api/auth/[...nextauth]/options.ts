@@ -74,15 +74,8 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({
-      token,
-      user,
-      account,
-    }: {
-      token: any;
-      user: any;
-      account: any;
-    }) {
+    async jwt(params: any) {
+      const { token, user } = params;
       if (user) {
         token._id = user.id;
         token.username = user.username || user.email?.split("@")[0];
@@ -92,7 +85,8 @@ export const authOptions = {
       }
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session(params: any) {
+      const { session, token } = params;
       if (session?.user && token) {
         session.user._id = token._id as string;
         session.user.username = token.username as string;
@@ -102,15 +96,8 @@ export const authOptions = {
       }
       return session;
     },
-    async signIn({
-      user,
-      account,
-      profile,
-    }: {
-      user: any;
-      account: any;
-      profile?: any;
-    }) {
+    async signIn(params: any) {
+      const { user, account } = params;
       try {
         // Allow all credential logins (handled by authorize function)
         if (account?.provider === "credentials") {
