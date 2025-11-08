@@ -43,7 +43,7 @@ export async function POST(
 
     // Remove user from participants
     room.participants = room.participants.filter(
-      (p: any) => p.userId.toString() !== session.user._id
+      (p: { userId: { toString: () => string } }) => p.userId.toString() !== session.user._id
     );
 
     await room.save();
@@ -52,7 +52,7 @@ export async function POST(
       success: true,
       message: "Successfully left the room",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error leaving room:", error);
     return NextResponse.json(
       { success: false, error: "Failed to leave room" },

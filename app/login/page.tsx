@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +91,7 @@ export default function AuthPage() {
       } else {
         // Handle login using NextAuth
         const { email, password } = formData;
-        
+
         if (!email.trim() || !password) {
           setError("Please enter both email and password");
           setIsLoading(false);
@@ -113,7 +113,11 @@ export default function AuthPage() {
       }
     } catch (error) {
       console.error("Auth error:", error);
-      setError(mode === "signup" ? "Registration failed. Please try again." : "Sign in failed. Please try again.");
+      setError(
+        mode === "signup"
+          ? "Registration failed. Please try again."
+          : "Sign in failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -126,13 +130,14 @@ export default function AuthPage() {
         redirect: false,
         callbackUrl: "/dashboard",
       });
-      
+
       if (result?.error) {
         setError("Google sign-in failed");
       } else if (result?.url) {
         router.push(result.url);
       }
     } catch (error) {
+      console.error(error);
       setError("Google sign-in failed");
     } finally {
       setIsLoading(false);

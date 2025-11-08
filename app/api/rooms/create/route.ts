@@ -19,7 +19,20 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { name, description, isPrivate, password, maxParticipants } = body;
-
+    
+    console.log("Session user:", session.user);
+    console.log("User ID:", session.user._id);
+    console.log("Username:", session.user.username);
+    
+    // Validate user ID
+    const userId = session.user._id || session.user.id;
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "User ID not found in session" },
+        { status: 400 }
+      );
+    }
+    
     // Validation
     if (!name || name.trim().length < 3) {
       return NextResponse.json(
@@ -36,7 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique room code
-    const roomCode = await (Room as any).generateRoomCode();
+    const roomCode = await (
+      Room as unknown as { generateRoomCode: () => Promise<string> }
+    ).generateRoomCode();
 
     // Hash password if provided
     let hashedPassword = undefined;
@@ -49,14 +64,14 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       description: description?.trim(),
       roomCode,
-      owner: session.user._id,
+      owner: userId,
       isPrivate: isPrivate || false,
       password: hashedPassword,
       maxParticipants: maxParticipants || 10,
       participants: [
         {
-          userId: session.user._id,
-          username: session.user.username,
+          userId: userId,
+          username: session.user.username || "Unknown",
           role: "owner",
           joinedAt: new Date(),
         },
@@ -82,7 +97,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating room:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create room" },

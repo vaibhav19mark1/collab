@@ -6,7 +6,7 @@ import User from "@/models/User";
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
-    
+
     const { username, email, password } = await request.json();
 
     // Validate input
@@ -72,29 +72,37 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { 
-        message: "User created successfully", 
+      {
+        message: "User created successfully",
         user: {
           id: user._id,
           username: user.username,
           email: user.email,
-          isVerified: user.isVerified
-        }
+          isVerified: user.isVerified,
+        },
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Registration error:", error);
-    
+
     // Handle mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+    if (
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      error.name === "ValidationError" &&
+      "errors" in error
+    ) {
+      const validationErrors = Object.values(
+        error.errors as Record<string, { message: string }>
+      ).map((err) => err.message);
       return NextResponse.json(
-        { error: validationErrors.join(', ') },
+        { error: validationErrors.join(", ") },
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error. Please try again." },
       { status: 500 }

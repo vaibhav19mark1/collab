@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface Participant {
-  userId: Types.ObjectId;
+  userId: string;
   username: string;
   role: "owner" | "admin" | "member";
   joinedAt: Date;
@@ -13,7 +13,7 @@ export interface Room extends Document {
   description?: string;
   roomCode: string;
   password?: string;
-  owner: Types.ObjectId;
+  owner: string;
   participants: Participant[];
   isPrivate: boolean;
   maxParticipants: number;
@@ -29,8 +29,7 @@ export interface Room extends Document {
 const participantSchema = new Schema<Participant>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     username: {
@@ -76,8 +75,7 @@ const roomSchema = new Schema<Room>(
       minlength: [6, "Password must be at least 6 characters"],
     },
     owner: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
       index: true,
     },

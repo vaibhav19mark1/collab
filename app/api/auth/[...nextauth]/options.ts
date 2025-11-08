@@ -1,8 +1,11 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import dbConnect from "@/lib/db";
-import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import User from "@/models/User";
+import type { User as NextAuthUser, Session } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+import type { Account } from "next-auth";
 
 export const authOptions = {
   providers: [
@@ -13,7 +16,9 @@ export const authOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials: any) {
+      async authorize(
+        credentials: Partial<Record<"email" | "password", unknown>>
+      ) {
         try {
           await dbConnect();
           console.log("Database connected successfully");
@@ -28,7 +33,14 @@ export const authOptions = {
                 email: credentials?.email,
               },
             ],
-          }).lean()) as any;
+          }).lean()) as {
+            _id: { toString: () => string };
+            email: string;
+            username?: string;
+            name?: string;
+            password: string;
+            isVerified?: boolean;
+          } | null;
 
           // user not found
           if (!user) throw new Error("User not found");
@@ -37,19 +49,20 @@ export const authOptions = {
           //   throw new Error("Please verify your email to login");
 
           const isPasswordValid = await bcrypt.compare(
-            credentials?.password,
+            credentials?.password as string,
             user.password
           );
           if (!isPasswordValid) throw new Error("Invalid password");
 
           return {
             id: user._id.toString(),
+            _id: user._id.toString(),
             email: user.email,
             username: user.username || "",
             name: user.name || user.username || "",
             isVerified: user.isVerified ?? true,
           };
-        } catch (error: any) {
+        } catch (error) {
           console.error("Auth error:", error);
           return null;
         }
@@ -74,30 +87,23 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt(params: any) {
-      const { token, user } = params;
+    async jwt({ token, user }: { token: JWT; user: NextAuthUser }) {
       if (user) {
-        token._id = user.id;
+        token._id = user._id || user.id;
         token.username = user.username || user.email?.split("@")[0];
         token.isVerified = user.isVerified ?? true;
-        token.email = user.email;
-        token.name = user.name;
       }
       return token;
     },
-    async session(params: any) {
-      const { session, token } = params;
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session?.user && token) {
         session.user._id = token._id as string;
         session.user.username = token.username as string;
         session.user.isVerified = token.isVerified as boolean;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
       }
       return session;
     },
-    async signIn(params: any) {
-      const { user, account } = params;
+    async signIn({ user, account }: { user: NextAuthUser; account?: Account | null }) {
       try {
         // Allow all credential logins (handled by authorize function)
         if (account?.provider === "credentials") {
@@ -109,7 +115,7 @@ export const authOptions = {
           await dbConnect();
 
           // Check if user already exists with this email
-          let existingUser = await User.findOne({ email: user.email });
+          const existingUser = await User.findOne({ email: user.email });
 
           if (existingUser) {
             // User exists, update their info if needed
@@ -119,12 +125,13 @@ export const authOptions = {
             }
             // Update user object with existing user data
             user.id = existingUser._id.toString();
+            user._id = existingUser._id.toString();
             user.username = existingUser.username;
             user.isVerified = existingUser.isVerified;
             return true;
           } else {
             // Generate unique username from email
-            let username = user.email.split("@")[0].toLowerCase();
+            let username = user.email?.split("@")[0].toLowerCase() || "user";
 
             // Check if username exists and make it unique
             const usernameExists = await User.findOne({ username });
@@ -143,6 +150,7 @@ export const authOptions = {
 
             // Update user object with new user data
             user.id = newUser._id.toString();
+            user._id = newUser._id.toString();
             user.username = newUser.username;
             user.isVerified = newUser.isVerified;
             return true;

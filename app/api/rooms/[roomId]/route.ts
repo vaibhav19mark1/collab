@@ -21,7 +21,22 @@ export async function GET(
 
     const { roomId } = await params;
 
-    const room = await Room.findById(roomId).select("-password").lean() as any;
+    type RoomDocument = {
+      _id: { toString: () => string };
+      name: string;
+      description?: string;
+      roomCode: string;
+      owner: string;
+      isPrivate: boolean;
+      password?: string;
+      maxParticipants: number;
+      participants: Array<{ userId: string; username: string; role: string; joinedAt: Date }>;
+      lastActivity: Date;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+
+    const room = await Room.findById(roomId).select("-password").lean() as unknown as RoomDocument | null;
 
     if (!room) {
       return NextResponse.json(
@@ -34,7 +49,7 @@ export async function GET(
     const hasAccess =
       room.owner.toString() === session.user._id ||
       room.participants.some(
-        (p: any) => p.userId.toString() === session.user._id
+        (p) => p.userId.toString() === session.user._id
       );
 
     if (!hasAccess) {
@@ -55,7 +70,7 @@ export async function GET(
         isPrivate: room.isPrivate,
         hasPassword: !!room.password,
         maxParticipants: room.maxParticipants,
-        participants: room.participants.map((p: any) => ({
+        participants: room.participants.map((p) => ({
           userId: p.userId.toString(),
           username: p.username,
           role: p.role,
@@ -66,7 +81,7 @@ export async function GET(
         updatedAt: room.updatedAt,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching room:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch room" },
@@ -118,7 +133,7 @@ export async function DELETE(
       success: true,
       message: "Room deleted successfully",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error deleting room:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete room" },
@@ -184,7 +199,7 @@ export async function PATCH(
         maxParticipants: room.maxParticipants,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error updating room:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update room" },

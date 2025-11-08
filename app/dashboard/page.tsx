@@ -15,7 +15,7 @@ export default function Dashboard() {
     if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [status, router]);
+  }, [status]);
 
   if (status === "loading") {
     return (
@@ -117,14 +117,25 @@ export default function Dashboard() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full justify-start bg-orange-500 hover:bg-orange-600">
+                <Button 
+                  className="w-full justify-start bg-orange-500 hover:bg-orange-600"
+                  onClick={() => router.push("/rooms")}
+                >
+                  My Rooms
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => router.push("/rooms")}
+                >
                   Create New Room
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => router.push("/rooms")}
+                >
                   Join Room
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  My Rooms
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   Recent Activity

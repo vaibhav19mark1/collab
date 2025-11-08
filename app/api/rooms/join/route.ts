@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
 
     // Add user to participants
     room.participants.push({
-      userId: session.user._id as any,
-      username: session.user.username,
+      userId: session.user._id as string,
+      username: session.user.username as string,
       role: "member",
       joinedAt: new Date(),
     });
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         roomCode: room.roomCode,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error joining room:", error);
     return NextResponse.json(
       { success: false, error: "Failed to join room" },
