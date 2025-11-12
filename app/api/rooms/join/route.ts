@@ -40,6 +40,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // check if user is banned
+    if (room.isBanned(session.user._id)) {
+      return NextResponse.json(
+        { success: false, error: "You are banned from this room" },
+        { status: 403 }
+      );
+    }
+
     // Check if user is already a participant
     if (room.isParticipant(session.user._id)) {
       return NextResponse.json(

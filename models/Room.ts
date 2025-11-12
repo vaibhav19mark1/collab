@@ -1,11 +1,5 @@
+import { BannedUser, Participant } from "@/types/room.types";
 import mongoose, { Document, Schema, Types } from "mongoose";
-
-export interface Participant {
-  userId: string;
-  username: string;
-  role: "owner" | "admin" | "member";
-  joinedAt: Date;
-}
 
 export interface Room extends Document {
   _id: Types.ObjectId;
@@ -15,6 +9,7 @@ export interface Room extends Document {
   password?: string;
   owner: string;
   participants: Participant[];
+  bannedUsers: BannedUser[];
   isPrivate: boolean;
   maxParticipants: number;
   isActive: boolean;
@@ -44,6 +39,31 @@ const participantSchema = new Schema<Participant>(
     joinedAt: {
       type: Date,
       default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
+const bannedUserSchema = new Schema<BannedUser>(
+  {
+    userId: {
+      type: String,
+      required: true,
+    },
+    username: {
+      type: String,
+      required: true,
+    },
+    bannedBy: {
+      type: String,
+      required: true,
+    },
+    bannedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    reason: {
+      type: String,
     },
   },
   { _id: false }
@@ -89,6 +109,7 @@ const roomSchema = new Schema<Room>(
         message: (props) => `Cannot add more than ${props.value} participants`,
       },
     },
+    bannedUsers: [bannedUserSchema],
     isPrivate: {
       type: Boolean,
       default: false,
@@ -134,19 +155,16 @@ roomSchema.statics.generateRoomCode = async function (): Promise<string> {
   return roomCode!;
 };
 
-// Method to check if user is participant
 roomSchema.methods.isParticipant = function (userId: string): boolean {
   return this.participants.some(
     (p: Participant) => p.userId.toString() === userId
   );
 };
 
-// Method to check if user is owner
 roomSchema.methods.isOwner = function (userId: string): boolean {
   return this.owner.toString() === userId;
 };
 
-// Method to get participant role
 roomSchema.methods.getParticipantRole = function (
   userId: string
 ): string | null {
@@ -156,7 +174,22 @@ roomSchema.methods.getParticipantRole = function (
   return participant ? participant.role : null;
 };
 
-// Update lastActivity before save
+roomSchema.methods.isAdmin = function (userId: string): boolean {
+  const role = this.getParticipantRole(userId);
+  return role === "admin";
+};
+
+roomSchema.methods.isBanned = function (userId: string): boolean {
+  return this.bannedUsers.some(
+    (b: BannedUser) => b.userId.toString() === userId
+  );
+};
+
+roomSchema.methods.canManageParticipants = function (userId: string): boolean {
+  return this.isOwner(userId) || this.isAdmin(userId);
+};
+
+// update lastActivity before save
 roomSchema.pre("save", function (next) {
   this.lastActivity = new Date();
   next();

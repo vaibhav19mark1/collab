@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const isSigningUp = mode === "signup";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,53 +32,41 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
-      if (mode === "signup") {
+      const { username = "", email = "", password = "" } = formData;
+      if (isSigningUp) {
         // Validate signup fields
-        if (!formData.username.trim()) {
+        if (!username.trim()) {
           setError("Username is required");
           setIsLoading(false);
           return;
         }
-        if (formData.username.length < 2) {
+        if (username.length < 2) {
           setError("Username must be at least 2 characters");
           setIsLoading(false);
           return;
         }
-        if (!formData.email.trim()) {
+        if (!email.trim()) {
           setError("Email is required");
           setIsLoading(false);
           return;
         }
-        if (formData.password.length < 6) {
+        if (password.length < 6) {
           setError("Password must be at least 6 characters");
           setIsLoading(false);
           return;
         }
 
         // Handle signup via custom registration endpoint
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: formData.username.trim(),
-            email: formData.email.trim(),
-            password: formData.password,
-          }),
+        await axios.post("/api/auth/register", {
+          username: username.trim(),
+          email: email.trim(),
+          password: password,
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.error || "Registration failed");
-          return;
-        }
 
         // After successful registration, automatically sign in using NextAuth
         const signInResult = await signIn("credentials", {
-          email: formData.email.trim(),
-          password: formData.password,
+          email: email.trim(),
+          password: password,
           redirect: false,
         });
 
@@ -90,7 +80,6 @@ export default function AuthPage() {
         }
       } else {
         // Handle login using NextAuth
-        const { email, password } = formData;
 
         if (!email.trim() || !password) {
           setError("Please enter both email and password");
@@ -113,11 +102,26 @@ export default function AuthPage() {
       }
     } catch (error) {
       console.error("Auth error:", error);
-      setError(
-        mode === "signup"
-          ? "Registration failed. Please try again."
-          : "Sign in failed. Please try again."
-      );
+      if (error instanceof Error && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { error?: string } };
+        };
+        if (axiosError.response?.data?.error) {
+          setError(axiosError.response.data.error);
+        } else {
+          setError(
+            isSigningUp
+              ? "Registration failed. Please try again."
+              : "Sign in failed. Please try again."
+          );
+        }
+      } else {
+        setError(
+          isSigningUp
+            ? "Registration failed. Please try again."
+            : "Sign in failed. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -151,19 +155,33 @@ export default function AuthPage() {
     }));
   };
 
+  const handleToggleMode = () => {
+    setMode(isSigningUp ? "login" : "signup");
+    setError("");
+    setShowPassword(false);
+    // Clear form data when switching modes
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+    });
+  };
+
+  const toggleShowPassword = () => setShowPassword((prev) => !prev);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4 py-6 -mt-16">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-500 rounded-full mb-4">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-500 rounded-full mb-3">
             <span className="text-white font-bold text-xl">C</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {mode === "signup" ? "Join Our Community" : "Let's Start Learning"}
+            {isSigningUp ? "Join Our Community" : "Let's Start Learning"}
           </h1>
           <p className="text-gray-600">
-            {mode === "signup"
+            {isSigningUp
               ? "Create your account to get started"
               : "Please login or sign up to continue"}
           </p>
@@ -171,10 +189,10 @@ export default function AuthPage() {
 
         {/* Sign Up/Login Form */}
         <Card className="shadow-xl border-0">
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Username - Only show for signup */}
-              {mode === "signup" && (
+              {isSigningUp && (
                 <div className="space-y-2">
                   <Label
                     htmlFor="username"
@@ -243,7 +261,7 @@ export default function AuthPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={toggleShowPassword}
                     className="absolute right-3 top-4 h-4 w-4 text-gray-400 hover:text-gray-600 focus:outline-none"
                     tabIndex={-1}
                   >
@@ -270,10 +288,10 @@ export default function AuthPage() {
                 className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg text-base"
               >
                 {isLoading
-                  ? mode === "signup"
+                  ? isSigningUp
                     ? "Creating account..."
                     : "Signing in..."
-                  : mode === "signup"
+                  : isSigningUp
                   ? "Create Account"
                   : "Sign In"}
               </Button>
@@ -284,14 +302,12 @@ export default function AuthPage() {
                   <span className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    or continue with
-                  </span>
+                  <span className="px-2 bg-white text-gray-500">or</span>
                 </div>
               </div>
 
               {/* Google Sign In */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -306,9 +322,10 @@ export default function AuthPage() {
                     height={20}
                     className="mr-2"
                   />
-                  Google
+                  Sign in with Google
                 </Button>
-                <Button
+                {/* Github login - to be implemented  */}
+                {/* <Button
                   type="button"
                   variant="outline"
                   className="col-span-1 h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-base"
@@ -321,33 +338,22 @@ export default function AuthPage() {
                     className="mr-2"
                   />
                   GitHub
-                </Button>
+                </Button> */}
               </div>
             </form>
-            <p className="text-center text-sm text-gray-600 w-full mt-6">
-              {mode === "signup"
+            <p className="text-center text-sm text-gray-600 w-full mt-4">
+              {isSigningUp
                 ? "Already have an account?"
-                : "Don't have an account?"}{" "}
+                : "Don't have an account?"}
               <button
                 type="button"
-                onClick={() => {
-                  setMode(mode === "signup" ? "login" : "signup");
-                  setError("");
-                  setShowPassword(false);
-                  // Clear form data when switching modes
-                  setFormData({
-                    username: "",
-                    email: "",
-                    password: "",
-                  });
-                }}
-                className="font-medium text-orange-600 hover:text-orange-500 underline"
+                onClick={handleToggleMode}
+                className="font-medium text-orange-600 hover:text-orange-500 underline ml-1"
               >
-                {mode === "signup" ? "Sign in" : "Sign up"}
+                {isSigningUp ? "Sign in" : "Sign up"}
               </button>
             </p>
           </CardContent>
-          {/* <CardFooter className="px-8 pb-8"></CardFooter> */}
         </Card>
       </div>
     </div>

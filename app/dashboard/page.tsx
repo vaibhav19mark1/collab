@@ -1,11 +1,11 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail, LogOut } from "lucide-react";
+import { User, Mail } from "lucide-react";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -34,36 +34,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-sm shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="inline-flex items-center justify-center w-8 h-8 bg-orange-500 rounded-full mr-3">
-                <span className="text-white font-bold text-sm">C</span>
-              </div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Collaboration Platform
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Welcome, {session.user?.name}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -100,14 +70,6 @@ export default function Dashboard() {
                     {session.user?.email}
                   </p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    User ID
-                  </label>
-                  <p className="text-xs text-gray-600 font-mono break-all">
-                    {session.user?.id}
-                  </p>
-                </div>
               </CardContent>
             </Card>
 
@@ -117,21 +79,21 @@ export default function Dashboard() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button 
+                <Button
                   className="w-full justify-start bg-orange-500 hover:bg-orange-600"
                   onClick={() => router.push("/rooms")}
                 >
                   My Rooms
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full justify-start"
                   onClick={() => router.push("/rooms")}
                 >
                   Create New Room
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full justify-start"
                   onClick={() => router.push("/rooms")}
                 >

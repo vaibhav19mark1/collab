@@ -9,13 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Loader2, FolderOpen } from "lucide-react";
 import { Room, RoomFilter } from "@/types/room.types";
+import { roomModalTabs } from "./helper";
+import { fetchRooms } from "./api";
 
 export default function RoomsPage() {
   const { data: session, status } = useSession();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<RoomFilter>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -25,24 +27,9 @@ export default function RoomsPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      fetchRooms();
+      fetchRooms({ setIsLoading, setRooms, filter });
     }
   }, [status, filter]);
-
-  const fetchRooms = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/rooms?filter=${filter}`);
-      if (!response.ok) throw new Error("Failed to fetch rooms");
-
-      const data = await response.json();
-      setRooms(data.rooms || []);
-    } catch (error) {
-      console.error("Error fetching rooms:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (status === "loading") {
     return (
@@ -66,8 +53,8 @@ export default function RoomsPage() {
             Create and manage your collaboration rooms
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} size="lg">
-          <Plus className="mr-2 h-5 w-5" />
+        <Button onClick={() => setIsRoomModalOpen(true)} size="lg">
+          <Plus className="h-5 w-5" />
           New Room
         </Button>
       </div>
@@ -79,9 +66,11 @@ export default function RoomsPage() {
         className="mb-6"
       >
         <TabsList>
-          <TabsTrigger value="all">All Rooms</TabsTrigger>
-          <TabsTrigger value="owned">My Rooms</TabsTrigger>
-          <TabsTrigger value="joined">Joined</TabsTrigger>
+          {roomModalTabs.map(({ value, name }) => (
+            <TabsTrigger key={value} value={value}>
+              {name}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
@@ -103,9 +92,9 @@ export default function RoomsPage() {
               ? "You haven't joined any rooms yet. Use a room code to join one."
               : "You don't have any rooms yet. Create or join one to get started."}
           </p>
-          <Button onClick={() => setIsModalOpen(true)}>
+          <Button onClick={() => setIsRoomModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Your First Room
+            Create/Join Your First Room
           </Button>
         </div>
       ) : (
@@ -115,19 +104,21 @@ export default function RoomsPage() {
               key={room._id}
               room={room}
               currentUserId={session.user._id}
-              onDelete={fetchRooms}
-              onLeave={fetchRooms}
+              onDelete={() => fetchRooms({ setIsLoading, setRooms, filter })}
+              onLeave={() => fetchRooms({ setIsLoading, setRooms, filter })}
             />
           ))}
         </div>
       )}
 
       {/* Room Modal */}
-      <RoomModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchRooms}
-      />
+      {isRoomModalOpen && (
+        <RoomModal
+          isOpen={isRoomModalOpen}
+          onClose={() => setIsRoomModalOpen(false)}
+          onSuccess={() => fetchRooms({ setIsLoading, setRooms, filter })}
+        />
+      )}
     </div>
   );
 }

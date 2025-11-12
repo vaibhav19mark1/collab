@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
         { "participants.userId": session.user._id },
       ];
     }
-    console.log({ session });
     const rooms = await Room.find(query)
       .sort({ lastActivity: -1 })
       .select("-password")

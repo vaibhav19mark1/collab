@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import { Room } from "@/types/room.types";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface RoomCardProps {
   room: Room;
@@ -41,6 +43,8 @@ export function RoomCard({
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   const isOwner = room.owner === currentUserId;
   const participantCount = room.participants.length;
@@ -53,18 +57,12 @@ export function RoomCard({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this room?")) return;
-
     setIsDeleting(true);
+    setShowDeleteDialog(false);
     try {
-      const response = await fetch(`/api/rooms/${room._id}`, {
-        method: "DELETE",
-      });
+      await axios.delete(`/api/rooms/${room._id}`);
 
-      if (!response.ok) {
-        throw new Error("Failed to delete room");
-      }
-
+      toast.success("Room deleted successfully");
       onDelete?.();
     } catch (error) {
       console.error(error);
@@ -75,18 +73,12 @@ export function RoomCard({
   };
 
   const handleLeave = async () => {
-    if (!confirm("Are you sure you want to leave this room?")) return;
-
     setIsLeaving(true);
+    setShowLeaveDialog(false);
     try {
-      const response = await fetch(`/api/rooms/${room._id}/leave`, {
-        method: "POST",
-      });
+      await axios.post(`/api/rooms/${room._id}/leave`);
 
-      if (!response.ok) {
-        throw new Error("Failed to leave room");
-      }
-
+      toast.success("Left room successfully");
       onLeave?.();
     } catch (error) {
       console.error(error);
@@ -115,96 +107,126 @@ export function RoomCard({
   };
 
   return (
-    <Card className="group hover:shadow-md transition-all duration-200">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="truncate">{room.name}</CardTitle>
-            <CardDescription className="line-clamp-2 mt-1">
-              {room.description || "No description"}
-            </CardDescription>
-          </div>
-          {isOwner && (
-            <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-full text-xs font-medium">
-              <Crown className="h-3 w-3" />
-              <span>Owner</span>
+    <>
+      <Card className="group hover:shadow-md transition-all duration-200">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="truncate">{room.name}</CardTitle>
+              <CardDescription className="line-clamp-2 mt-1">
+                {room.description || "No description"}
+              </CardDescription>
             </div>
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-3">
-        {/* Room Code */}
-        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">
-              Room Code
-            </p>
-            <p className="font-mono text-lg font-bold tracking-wider">
-              {formatRoomCode(room.roomCode)}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopyCode}
-            className="h-8 w-8 p-0"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-green-600" />
-            ) : (
-              <Copy className="h-4 w-4" />
+            {isOwner && (
+              <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-full text-xs font-medium">
+                <Crown className="h-3 w-3" />
+                <span>Owner</span>
+              </div>
             )}
-          </Button>
-        </div>
-
-        {/* Room Info */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Users className="h-4 w-4" />
-            <span>
-              {participantCount}/{room.maxParticipants}
-            </span>
           </div>
-          {room.isPrivate && (
-            <div className="flex items-center gap-1.5">
-              <Lock className="h-4 w-4" />
-              <span>Private</span>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          {/* Room Code */}
+          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">
+                Room Code
+              </p>
+              <p className="font-mono text-lg font-bold tracking-wider">
+                {formatRoomCode(room.roomCode)}
+              </p>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyCode}
+              className="h-8 w-8 p-0"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          {/* Room Info */}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              <span>
+                {participantCount}/{room.maxParticipants}
+              </span>
+            </div>
+            {room.isPrivate && (
+              <div className="flex items-center gap-1.5">
+                <Lock className="h-4 w-4" />
+                <span>Private</span>
+              </div>
+            )}
+            <div className="ml-auto text-xs">
+              {formatDate(room.lastActivity)}
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex gap-2">
+          <Button
+            className="flex-1"
+            onClick={() => router.push(`/rooms/${room._id}`)}
+          >
+            Open Room
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+
+          {isOwner ? (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowLeaveDialog(true)}
+              disabled={isLeaving}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           )}
-          <div className="ml-auto text-xs">{formatDate(room.lastActivity)}</div>
-        </div>
-      </CardContent>
+        </CardFooter>
+      </Card>
 
-      <CardFooter className="flex gap-2">
-        <Button
-          className="flex-1"
-          onClick={() => router.push(`/rooms/${room._id}`)}
-        >
-          Open Room
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+      {showDeleteDialog && (
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Delete Room"
+          description="Are you sure you want to delete this room? This action cannot be undone and all participants will be removed."
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleDelete}
+          variant="destructive"
+        />
+      )}
 
-        {isOwner ? (
-          <Button
-            variant="destructive"
-            size="icon"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleLeave}
-            disabled={isLeaving}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+      {showLeaveDialog && (
+        <ConfirmDialog
+          open={showLeaveDialog}
+          onOpenChange={setShowLeaveDialog}
+          title="Leave Room"
+          description="Are you sure you want to leave this room? You can rejoin later using the room code."
+          confirmText="Leave"
+          cancelText="Cancel"
+          onConfirm={handleLeave}
+          variant="default"
+        />
+      )}
+    </>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter, redirect } from "next/navigation";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,6 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Users,
   Lock,
@@ -23,9 +31,15 @@ import {
   Loader2,
   Settings,
   Calendar,
+  MoreVertical,
+  Shield,
+  UserX,
+  Ban,
+  UserCheck,
 } from "lucide-react";
 import { Room, Participant } from "@/types/room.types";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function RoomDetailsPage() {
   const { data: session, status } = useSession();
@@ -36,6 +50,17 @@ export default function RoomDetailsPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showKickDialog, setShowKickDialog] = useState<{
+    userId: string;
+    username: string;
+  } | null>(null);
+  const [showBanDialog, setShowBanDialog] = useState<{
+    userId: string;
+    username: string;
+  } | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -52,17 +77,8 @@ export default function RoomDetailsPage() {
   const fetchRoom = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/rooms/${roomId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          router.push("/rooms");
-          return;
-        }
-        throw new Error("Failed to fetch room");
-      }
-
-      const data = await response.json();
-      setRoom(data.room);
+      const response = await axios.get(`/api/rooms/${roomId}`);
+      setRoom(response.data.room);
     } catch (error) {
       console.error("Error fetching room:", error);
       router.push("/rooms");
@@ -79,44 +95,134 @@ export default function RoomDetailsPage() {
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this room? This cannot be undone."
-      )
-    )
-      return;
-
+    setShowDeleteDialog(false);
     try {
-      const response = await fetch(`/api/rooms/${roomId}`, {
-        method: "DELETE",
-      });
+      await axios.delete(`/api/rooms/${roomId}`);
 
-      if (!response.ok) {
-        throw new Error("Failed to delete room");
-      }
-
+      toast.success("Room deleted successfully");
       router.push("/rooms");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete room");
     }
   };
 
   const handleLeave = async () => {
-    if (!confirm("Are you sure you want to leave this room?")) return;
-
+    setShowLeaveDialog(false);
     try {
-      const response = await fetch(`/api/rooms/${roomId}/leave`, {
-        method: "POST",
-      });
+      await axios.post(`/api/rooms/${roomId}/leave`);
 
-      if (!response.ok) {
-        throw new Error("Failed to leave room");
-      }
-
+      toast.success("Left room successfully");
       router.push("/rooms");
-    } catch (error) {
+    } catch {
       toast.error("Failed to leave room");
     }
+  };
+
+  const handleKickUser = async () => {
+    if (!showKickDialog) return;
+
+    const userId = showKickDialog.userId;
+    setShowKickDialog(null);
+    setActionLoading(userId);
+
+    try {
+      await axios.post(`/api/rooms/${roomId}/kick`, { userId });
+      toast.success(`${showKickDialog.username} has been kicked from the room`);
+      await fetchRoom();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to kick user");
+      } else {
+        toast.error("Failed to kick user");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBanUser = async () => {
+    if (!showBanDialog) return;
+
+    const userId = showBanDialog.userId;
+    setShowBanDialog(null);
+    setActionLoading(userId);
+
+    try {
+      await axios.post(`/api/rooms/${roomId}/ban`, {
+        userId,
+        reason: "Banned by room moderator",
+      });
+      toast.success(`${showBanDialog.username} has been banned from the room`);
+      await fetchRoom();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to ban user");
+      } else {
+        toast.error("Failed to ban user");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleRole = async (userId: string, currentRole: string) => {
+    setActionLoading(userId);
+    const newRole = currentRole === "admin" ? "member" : "admin";
+
+    try {
+      await axios.patch(`/api/rooms/${roomId}/role`, { userId, role: newRole });
+      toast.success(
+        `User ${newRole === "admin" ? "promoted to" : "demoted from"} admin`
+      );
+      await fetchRoom();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to update role");
+      } else {
+        toast.error("Failed to update role");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUnbanUser = async (userId: string, username: string) => {
+    setActionLoading(userId);
+
+    try {
+      await axios.post(`/api/rooms/${roomId}/unban`, { userId });
+      toast.success(`${username} has been unbanned`);
+      await fetchRoom();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to unban user");
+      } else {
+        toast.error("Failed to unban user");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const canManageParticipant = (participant: Participant) => {
+    if (!room || !session) return false;
+    if (participant.userId === session.user._id) return false; // Can't manage yourself
+    if (participant.role === "owner") return false; // Can't manage owner
+
+    const currentUserParticipant = room.participants.find(
+      (p) => p.userId === session.user._id
+    );
+    if (!currentUserParticipant) return false;
+
+    if (currentUserParticipant.role === "owner") return true; // Owner can manage all
+    if (
+      currentUserParticipant.role === "admin" &&
+      participant.role === "member"
+    ) {
+      return true; // Admin can manage members
+    }
+
+    return false;
   };
 
   const formatRoomCode = (code: string) => {
@@ -147,6 +253,11 @@ export default function RoomDetailsPage() {
   }
 
   const isOwner = room.owner === session.user._id;
+  const currentUserParticipant = room.participants.find(
+    (p) => p.userId === session.user._id
+  );
+  const isAdmin = currentUserParticipant?.role === "admin";
+  const canManage = isOwner || isAdmin;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -179,12 +290,18 @@ export default function RoomDetailsPage() {
 
           <div className="flex gap-2">
             {isOwner ? (
-              <Button variant="destructive" onClick={handleDelete}>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Room
               </Button>
             ) : (
-              <Button variant="outline" onClick={handleLeave}>
+              <Button
+                variant="outline"
+                onClick={() => setShowLeaveDialog(true)}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Leave Room
               </Button>
@@ -283,36 +400,171 @@ export default function RoomDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
-              {room.participants.map((participant: Participant) => (
-                <div
-                  key={participant.userId}
-                  className="flex items-center justify-between p-3 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                      {participant.username.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium">{participant.username}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Joined{" "}
-                        {new Date(participant.joinedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
+              {room.participants.map((participant: Participant) => {
+                const canManageThis = canManageParticipant(participant);
+                const isLoadingThis = actionLoading === participant.userId;
+
+                return (
                   <div
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                      participant.role
-                    )}`}
+                    key={participant.userId}
+                    className="flex items-center justify-between p-3 rounded-lg border"
                   >
-                    {participant.role}
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        {participant.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium">{participant.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Joined{" "}
+                          {new Date(participant.joinedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
+                          participant.role
+                        )}`}
+                      >
+                        {participant.role}
+                      </div>
+
+                      {canManage && canManageThis && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              disabled={isLoadingThis}
+                            >
+                              {isLoadingThis ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreVertical className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {isOwner && participant.role !== "owner" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleToggleRole(
+                                      participant.userId,
+                                      participant.role
+                                    )
+                                  }
+                                >
+                                  {participant.role === "admin" ? (
+                                    <>
+                                      <UserCheck className="mr-2 h-4 w-4" />
+                                      Demote to Member
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Shield className="mr-2 h-4 w-4" />
+                                      Promote to Admin
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setShowKickDialog({
+                                  userId: participant.userId,
+                                  username: participant.username,
+                                })
+                              }
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              Kick User
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setShowBanDialog({
+                                  userId: participant.userId,
+                                  username: participant.username,
+                                })
+                              }
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              Ban User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Banned Users Section - Only visible to owner/admin */}
+      {canManage && room.bannedUsers && room.bannedUsers.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Banned Users</CardTitle>
+            <CardDescription>
+              Users who have been banned from this room
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {room.bannedUsers.map((bannedUser) => {
+                const isLoadingThis = actionLoading === bannedUser.userId;
+
+                return (
+                  <div
+                    key={bannedUser.userId}
+                    className="flex items-center justify-between p-3 rounded-lg border border-destructive/20 bg-destructive/5"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-semibold">
+                        {bannedUser.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{bannedUser.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Banned{" "}
+                          {new Date(bannedUser.bannedAt).toLocaleDateString()}
+                          {bannedUser.reason && ` • ${bannedUser.reason}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleUnbanUser(bannedUser.userId, bannedUser.username)
+                      }
+                      disabled={isLoadingThis}
+                    >
+                      {isLoadingThis ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserCheck className="mr-2 h-4 w-4" />
+                      )}
+                      Unban
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Collaboration Tools Placeholder */}
       <Card className="mt-6">
@@ -342,6 +594,58 @@ export default function RoomDetailsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {showDeleteDialog && (
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Delete Room"
+          description="Are you sure you want to delete this room? This action cannot be undone and all participants will be removed."
+          confirmText="Delete Room"
+          cancelText="Cancel"
+          onConfirm={handleDelete}
+          variant="destructive"
+        />
+      )}
+
+      {showLeaveDialog && (
+        <ConfirmDialog
+          open={showLeaveDialog}
+          onOpenChange={setShowLeaveDialog}
+          title="Leave Room"
+          description="Are you sure you want to leave this room? You can rejoin later using the room code."
+          confirmText="Leave Room"
+          cancelText="Cancel"
+          onConfirm={handleLeave}
+          variant="default"
+        />
+      )}
+
+      {showKickDialog && (
+        <ConfirmDialog
+          open={!!showKickDialog}
+          onOpenChange={() => setShowKickDialog(null)}
+          title="Kick User"
+          description={`Are you sure you want to kick ${showKickDialog.username} from this room? They can rejoin later using the room code.`}
+          confirmText="Kick User"
+          cancelText="Cancel"
+          onConfirm={handleKickUser}
+          variant="default"
+        />
+      )}
+
+      {showBanDialog && (
+        <ConfirmDialog
+          open={!!showBanDialog}
+          onOpenChange={() => setShowBanDialog(null)}
+          title="Ban User"
+          description={`Are you sure you want to ban ${showBanDialog.username} from this room? They will not be able to rejoin until unbanned.`}
+          confirmText="Ban User"
+          cancelText="Cancel"
+          onConfirm={handleBanUser}
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -60,23 +61,13 @@ export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
         throw new Error("Password must be at least 6 characters");
       }
 
-      const response = await fetch("/api/rooms/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: createForm.name.trim(),
-          description: createForm.description.trim() || undefined,
-          isPrivate: createForm.isPrivate,
-          password: createForm.isPrivate ? createForm.password : undefined,
-          maxParticipants: createForm.maxParticipants,
-        }),
+      await axios.post("/api/rooms/create", {
+        name: createForm.name.trim(),
+        description: createForm.description.trim() || undefined,
+        isPrivate: createForm.isPrivate,
+        password: createForm.isPrivate ? createForm.password : undefined,
+        maxParticipants: createForm.maxParticipants,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create room");
-      }
 
       // Reset form
       setCreateForm({
@@ -107,25 +98,10 @@ export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
         throw new Error("Room code is required");
       }
 
-      const response = await fetch("/api/rooms/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roomCode: joinForm.roomCode.trim().toUpperCase(),
-          password: joinForm.password || undefined,
-        }),
+      await axios.post("/api/rooms/join", {
+        roomCode: joinForm.roomCode.trim().toUpperCase(),
+        password: joinForm.password || undefined,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // If password is required but not provided
-        if (response.status === 400 && data.error?.includes("Password")) {
-          setNeedsPassword(true);
-          throw new Error(data.error);
-        }
-        throw new Error(data.error || "Failed to join room");
-      }
 
       // Reset form
       setJoinForm({ roomCode: "", password: "" });
@@ -134,8 +110,21 @@ export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
       onSuccess?.();
       onClose();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      setError(errorMessage);
+      // If password is required but not provided
+      if (err instanceof Error && 'response' in err) {
+        const axiosError = err as { response?: { status?: number; data?: { error?: string } } };
+        if (axiosError.response?.status === 400 && axiosError.response?.data?.error?.includes("Password")) {
+          setNeedsPassword(true);
+          setError(axiosError.response.data.error);
+        } else {
+          const errorMessage = axiosError.response?.data?.error || err.message || "An error occurred";
+          setError(errorMessage);
+        }
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
