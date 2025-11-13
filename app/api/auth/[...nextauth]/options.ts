@@ -24,15 +24,17 @@ export const authOptions = {
           console.log("Database connected successfully");
 
           if (!credentials?.email || !credentials?.password) {
+            console.log("Missing credentials");
             throw new Error("Email and password are required");
           }
 
+          const email = String(credentials.email).toLowerCase().trim();
+          const password = String(credentials.password);
+
+          console.log("Attempting login for email:", email);
+
           const user = (await User.findOne({
-            $or: [
-              {
-                email: credentials?.email,
-              },
-            ],
+            email: email,
           }).lean()) as {
             _id: { toString: () => string };
             email: string;
@@ -43,16 +45,30 @@ export const authOptions = {
           } | null;
 
           // user not found
-          if (!user) throw new Error("User not found");
-          // user not verified
-          // if (!user.verified)
-          //   throw new Error("Please verify your email to login");
+          if (!user) {
+            console.log("User not found for email:", email);
+            throw new Error("User not found");
+          }
 
+          // Check if user has a password (not OAuth-only user)
+          if (!user.password) {
+            console.log("User has no password (OAuth account)");
+            throw new Error("Please sign in with Google");
+          }
+
+          console.log("Comparing passwords...");
           const isPasswordValid = await bcrypt.compare(
-            credentials?.password as string,
+            password,
             user.password
           );
-          if (!isPasswordValid) throw new Error("Invalid password");
+          
+          console.log("Password valid:", isPasswordValid);
+          
+          if (!isPasswordValid) {
+            throw new Error("Invalid password");
+          }
+
+          console.log("Login successful for user:", user.email);
 
           return {
             id: user._id.toString(),
@@ -64,7 +80,7 @@ export const authOptions = {
           };
         } catch (error) {
           console.error("Auth error:", error);
-          return null;
+          throw error;
         }
       },
     }),

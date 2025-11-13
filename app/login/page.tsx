@@ -75,8 +75,15 @@ export default function AuthPage() {
             "Registration successful, but automatic sign in failed. Please try logging in manually."
           );
         } else if (signInResult?.ok) {
-          // Successfully signed in, redirect to dashboard
-          router.push("/dashboard");
+          // Check for pending invite
+          const pendingInvite = sessionStorage.getItem("pendingInvite");
+          if (pendingInvite) {
+            sessionStorage.removeItem("pendingInvite");
+            router.push(`/invite/${pendingInvite}`);
+          } else {
+            // Successfully signed in, redirect to dashboard
+            router.push("/dashboard");
+          }
         }
       } else {
         // Handle login using NextAuth
@@ -96,8 +103,15 @@ export default function AuthPage() {
         if (result?.error) {
           setError("Invalid email or password");
         } else if (result?.ok) {
-          // Successfully signed in, redirect to dashboard
-          router.push("/dashboard");
+          // Check for pending invite
+          const pendingInvite = sessionStorage.getItem("pendingInvite");
+          if (pendingInvite) {
+            sessionStorage.removeItem("pendingInvite");
+            router.push(`/invite/${pendingInvite}`);
+          } else {
+            // Successfully signed in, redirect to dashboard
+            router.push("/dashboard");
+          }
         }
       }
     } catch (error) {

@@ -36,8 +36,10 @@ import {
   UserX,
   Ban,
   UserCheck,
+  Link,
+  X,
 } from "lucide-react";
-import { Room, Participant } from "@/types/room.types";
+import { Room, Participant, Invite } from "@/types/room.types";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -50,6 +52,7 @@ export default function RoomDetailsPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -61,6 +64,9 @@ export default function RoomDetailsPage() {
     userId: string;
     username: string;
   } | null>(null);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
+  const [showInvites, setShowInvites] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -74,6 +80,21 @@ export default function RoomDetailsPage() {
     }
   }, [status, roomId]);
 
+  useEffect(() => {
+    if (showInvites && room && session) {
+      const isOwner = room.owner === session.user._id;
+      const currentUserParticipant = room.participants.find(
+        (p) => p.userId === session.user._id
+      );
+      const isAdmin = currentUserParticipant?.role === "admin";
+      const canManageRoom = isOwner || isAdmin;
+
+      if (canManageRoom) {
+        fetchInvites();
+      }
+    }
+  }, [showInvites, room, session]);
+
   const fetchRoom = async () => {
     setIsLoading(true);
     try {
@@ -85,6 +106,66 @@ export default function RoomDetailsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchInvites = async () => {
+    try {
+      const response = await axios.get(`/api/rooms/${roomId}/invite`);
+      setInvites(response.data.invites || []);
+    } catch (error) {
+      console.error("Error fetching invites:", error);
+    }
+  };
+
+  const handleGenerateInviteLink = async () => {
+    setIsGeneratingInvite(true);
+    try {
+      const response = await axios.post(`/api/rooms/${roomId}/invite`, {
+        expiryDays: 7,
+      });
+
+      const inviteUrl = response.data.inviteUrl;
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2000);
+
+      toast.success("Invite link copied to clipboard!");
+      await fetchInvites(); // Refresh invites list
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.error || "Failed to generate invite link"
+        );
+      } else {
+        toast.error("Failed to generate invite link");
+      }
+    } finally {
+      setIsGeneratingInvite(false);
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    setActionLoading(inviteId);
+    try {
+      await axios.delete(`/api/rooms/invite/${inviteId}/revoke`);
+      toast.success("Invite revoked successfully");
+      await fetchInvites(); // Refresh invites list
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.error || "Failed to revoke invite");
+      } else {
+        toast.error("Failed to revoke invite");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCopyInviteLink = async (token: string) => {
+    const baseUrl = window.location.origin;
+    const inviteUrl = `${baseUrl}/invite/${token}`;
+    await navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link copied!");
   };
 
   const handleCopyCode = async () => {
@@ -289,6 +370,22 @@ export default function RoomDetailsPage() {
           </div>
 
           <div className="flex gap-2">
+            {canManage && (
+              <Button
+                variant="outline"
+                onClick={handleGenerateInviteLink}
+                disabled={isGeneratingInvite}
+              >
+                {isGeneratingInvite ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : copiedInvite ? (
+                  <Check className="mr-2 h-4 w-4" />
+                ) : (
+                  <Link className="mr-2 h-4 w-4" />
+                )}
+                {copiedInvite ? "Link Copied!" : "Copy Invite Link"}
+              </Button>
+            )}
             {isOwner ? (
               <Button
                 variant="destructive"
@@ -563,6 +660,120 @@ export default function RoomDetailsPage() {
               })}
             </div>
           </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Invites Section - Only visible to owner/admin */}
+      {canManage && (
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Invite Links</CardTitle>
+                <CardDescription>
+                  Manage pending invitation links for this room
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowInvites(!showInvites)}
+              >
+                {showInvites ? "Hide" : "Show"}
+              </Button>
+            </div>
+          </CardHeader>
+          {showInvites && (
+            <CardContent>
+              {invites.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Link className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No active invites</p>
+                  <p className="text-sm">
+                    Generate an invite link to share with others
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {invites
+                    .filter(
+                      (invite) =>
+                        invite.status === "pending" &&
+                        new Date(invite.expiresAt) > new Date()
+                    )
+                    .map((invite) => {
+                      const isLoadingThis = actionLoading === invite._id;
+                      const expiresIn = Math.ceil(
+                        (new Date(invite.expiresAt).getTime() -
+                          new Date().getTime()) /
+                          (1000 * 60 * 60 * 24)
+                      );
+
+                      return (
+                        <div
+                          key={invite._id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white font-semibold">
+                              <Link className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">
+                                Created by {invite.inviterUsername}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Expires in {expiresIn} day
+                                {expiresIn !== 1 ? "s" : ""} •{" "}
+                                {new Date(
+                                  invite.createdAt
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopyInviteLink(invite.token)}
+                            >
+                              <Copy className="h-4 w-4 mr-1" />
+                              Copy
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRevokeInvite(invite._id)}
+                              disabled={isLoadingThis}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              {isLoadingThis ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <X className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {invites.filter(
+                    (invite) =>
+                      invite.status === "pending" &&
+                      new Date(invite.expiresAt) > new Date()
+                  ).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>All invites have expired</p>
+                      <p className="text-sm">
+                        Generate a new invite link to share
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          )}
         </Card>
       )}
 

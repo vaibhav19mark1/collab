@@ -41,3 +41,23 @@ export interface Room {
 }
 
 export type RoomFilter = "all" | "owned" | "joined";
+
+//! invite types
+
+export type InviteStatus = "pending" | "accepted" | "expired" | "revoked";
+
+export interface Invite {
+  _id: string;
+  roomId: string;
+  roomName: string;
+  token: string;
+  inviterId: string;
+  inviterUsername: string;
+  inviteeEmail?: string;
+  status: InviteStatus;
+  expiresAt: Date;
+  acceptedAt?: Date;
+  acceptedBy?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
