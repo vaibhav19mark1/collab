@@ -5,6 +5,7 @@ import Room from "@/models/Room";
 import Invite from "@/models/Invite";
 import crypto from "crypto";
 import { Invite as InviteLean } from "@/types/room.types";
+import { sendInviteEmail } from "@/lib/send-invite-email";
 
 // Configuration
 const DEFAULT_EXPIRY_DAYS = 7;
@@ -91,6 +92,22 @@ export async function POST(
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const inviteUrl = `${baseUrl}/invite/${token}`;
 
+    if (inviteeEmail) {
+      try {
+        await sendInviteEmail({
+          to: inviteeEmail,
+          inviterName: session.user.username || "Someone",
+          roomName: room.name,
+          roomDescription: room.description || "",
+          inviteUrl,
+          expiresInDays: expiryDays,
+        });
+        console.log(`Invite email sent to ${inviteeEmail}`);
+      } catch (error) {
+        console.error("Failed to send invite email:", error);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       invite: {
@@ -107,7 +124,10 @@ export async function POST(
         updatedAt: invite.updatedAt,
       },
       inviteUrl,
-      message: "Invite link created successfully",
+      emailSent: !!inviteeEmail,
+      message: inviteeEmail
+        ? "Invite created and email sent successfully"
+        : "Invite link created successfully",
     });
   } catch (error) {
     console.error("Error creating invite:", error);

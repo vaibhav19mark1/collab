@@ -143,7 +143,7 @@ export default function InviteAcceptPage() {
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
             <h2 className="text-2xl font-bold mb-2">Success!</h2>
             <p className="text-muted-foreground mb-4">
-              You've joined the room successfully
+              You&apos;ve joined the room successfully
             </p>
             <p className="text-sm text-muted-foreground">
               Redirecting to room...
@@ -168,7 +168,7 @@ export default function InviteAcceptPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-full mx-auto mb-4">
             <Users className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl">You're Invited!</CardTitle>
+          <CardTitle className="text-2xl">You&apos;re Invited!</CardTitle>
           <CardDescription>
             {inviteData.invite.inviterUsername} invited you to join
           </CardDescription>
@@ -257,7 +257,7 @@ export default function InviteAcceptPage() {
 
           {status !== "authenticated" && (
             <p className="text-xs text-center text-muted-foreground">
-              You'll be redirected to sign in and then automatically join the
+              You&apos;ll be redirected to sign in and then automatically join the
               room
             </p>
           )}

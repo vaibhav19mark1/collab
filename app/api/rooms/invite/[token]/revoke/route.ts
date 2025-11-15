@@ -6,7 +6,7 @@ import Room from "@/models/Room";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ inviteId: string }> }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const session = await auth();
@@ -20,10 +20,10 @@ export async function DELETE(
 
     await dbConnect();
 
-    const { inviteId } = await params;
+    const { token } = await params;
 
     // Find invite
-    const invite = await Invite.findById(inviteId);
+    const invite = await Invite.findById(token);
 
     if (!invite) {
       return NextResponse.json(
