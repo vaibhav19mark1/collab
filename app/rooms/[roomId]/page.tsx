@@ -44,16 +44,8 @@ import {
 import { Room, Participant, Invite } from "@/types/room.types";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RoomSettingsModal } from "@/components/RoomSettingsModal";
+import { InviteModal } from "@/components/InviteModal";
 
 export default function RoomDetailsPage() {
   const { data: session, status } = useSession();
@@ -65,27 +57,20 @@ export default function RoomDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [showKickDialog, setShowKickDialog] = useState<{
-    userId: string;
-    username: string;
-  } | null>(null);
-  const [showBanDialog, setShowBanDialog] = useState<{
-    userId: string;
-    username: string;
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant: "default" | "destructive";
+    onConfirm: () => void;
   } | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
   const [showInvites, setShowInvites] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Array<{_id: string; username: string; email: string}>>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<Array<{_id: string; username: string; email: string}>>([]);
-  const [customEmail, setCustomEmail] = useState("");
-  const [inviteTab, setInviteTab] = useState<"users" | "email">("users");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -185,101 +170,6 @@ export default function RoomDetailsPage() {
     }
   };
 
-  const handleSendInvites = async () => {
-    setIsGeneratingInvite(true);
-    try {
-      const emailsToInvite = inviteTab === "users" 
-        ? selectedUsers.map(u => u.email)
-        : [customEmail];
-
-      if (emailsToInvite.length === 0) {
-        toast.error("Please select users or enter an email");
-        setIsGeneratingInvite(false);
-        return;
-      }
-
-      const results = await Promise.allSettled(
-        emailsToInvite.map(email => 
-          axios.post(`/api/rooms/${roomId}/invite`, { 
-            expiryDays: 7,
-            inviteeEmail: email 
-          })
-        )
-      );
-
-      const successful = results.filter(r => r.status === "fulfilled").length;
-      const failed = results.filter(r => r.status === "rejected").length;
-
-      if (successful > 0) {
-        toast.success(`${successful} invite${successful > 1 ? 's' : ''} sent successfully!`);
-        await fetchInvites();
-        setShowInviteModal(false);
-        setSelectedUsers([]);
-        setCustomEmail("");
-        setSearchQuery("");
-      }
-
-      if (failed > 0) {
-        toast.error(`${failed} invite${failed > 1 ? 's' : ''} failed to send`);
-      }
-    } catch {
-      toast.error("Failed to send invites");
-    } finally {
-      setIsGeneratingInvite(false);
-    }
-  };
-
-  const searchUsers = async (query: string) => {
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const response = await axios.get(`/api/users/search`, {
-        params: { q: query, roomId: roomId }
-      });
-      setSearchResults(response.data);
-    } catch (error) {
-      console.error("User search error:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery && inviteTab === "users") {
-        searchUsers(searchQuery);
-      } else {
-        setSearchResults([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, inviteTab]);
-
-  const toggleUserSelection = (user: {_id: string; username: string; email: string}) => {
-    setSelectedUsers(prev => {
-      const isSelected = prev.find(u => u._id === user._id);
-      if (isSelected) {
-        return prev.filter(u => u._id !== user._id);
-      } else if (prev.length < 5) {
-        return [...prev, user];
-      } else {
-        toast.error("You can only select up to 5 users");
-        return prev;
-      }
-    });
-  };
-
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
   const handleCopyInviteLink = async (token: string) => {
     const baseUrl = window.location.origin;
     const inviteUrl = `${baseUrl}/invite/${token}`;
@@ -295,7 +185,7 @@ export default function RoomDetailsPage() {
   };
 
   const handleDelete = async () => {
-    setShowDeleteDialog(false);
+    setConfirmDialog(null);
     try {
       await axios.delete(`/api/rooms/${roomId}`);
 
@@ -307,7 +197,7 @@ export default function RoomDetailsPage() {
   };
 
   const handleLeave = async () => {
-    setShowLeaveDialog(false);
+    setConfirmDialog(null);
     try {
       await axios.post(`/api/rooms/${roomId}/leave`);
 
@@ -318,16 +208,13 @@ export default function RoomDetailsPage() {
     }
   };
 
-  const handleKickUser = async () => {
-    if (!showKickDialog) return;
-
-    const userId = showKickDialog.userId;
-    setShowKickDialog(null);
+  const handleKickUser = async (userId: string, username: string) => {
+    setConfirmDialog(null);
     setActionLoading(userId);
 
     try {
       await axios.post(`/api/rooms/${roomId}/kick`, { userId });
-      toast.success(`${showKickDialog.username} has been kicked from the room`);
+      toast.success(`${username} has been kicked from the room`);
       await fetchRoom();
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -340,11 +227,8 @@ export default function RoomDetailsPage() {
     }
   };
 
-  const handleBanUser = async () => {
-    if (!showBanDialog) return;
-
-    const userId = showBanDialog.userId;
-    setShowBanDialog(null);
+  const handleBanUser = async (userId: string, username: string) => {
+    setConfirmDialog(null);
     setActionLoading(userId);
 
     try {
@@ -352,7 +236,7 @@ export default function RoomDetailsPage() {
         userId,
         reason: "Banned by room moderator",
       });
-      toast.success(`${showBanDialog.username} has been banned from the room`);
+      toast.success(`${username} has been banned from the room`);
       await fetchRoom();
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -493,6 +377,14 @@ export default function RoomDetailsPage() {
               <>
                 <Button
                   variant="outline"
+                  size="icon"
+                  onClick={() => setShowSettingsDialog(true)}
+                  title="Room Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => handleGenerateInviteLink()}
                   disabled={isGeneratingInvite}
                 >
@@ -517,7 +409,17 @@ export default function RoomDetailsPage() {
             {isOwner ? (
               <Button
                 variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
+                onClick={() =>
+                  setConfirmDialog({
+                    open: true,
+                    title: "Delete Room",
+                    description:
+                      "Are you sure you want to delete this room? This action cannot be undone and all participants will be removed.",
+                    confirmText: "Delete Room",
+                    variant: "destructive",
+                    onConfirm: handleDelete,
+                  })
+                }
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Room
@@ -525,7 +427,17 @@ export default function RoomDetailsPage() {
             ) : (
               <Button
                 variant="outline"
-                onClick={() => setShowLeaveDialog(true)}
+                onClick={() =>
+                  setConfirmDialog({
+                    open: true,
+                    title: "Leave Room",
+                    description:
+                      "Are you sure you want to leave this room? You can rejoin later using the room code.",
+                    confirmText: "Leave Room",
+                    variant: "default",
+                    onConfirm: handleLeave,
+                  })
+                }
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Leave Room
@@ -700,24 +612,28 @@ export default function RoomDetailsPage() {
                             )}
 
                             <DropdownMenuItem
-                              onClick={() =>
-                                setShowKickDialog({
-                                  userId: participant.userId,
-                                  username: participant.username,
-                                })
-                              }
+                              onClick={() => setConfirmDialog({
+                                open: true,
+                                title: "Kick User",
+                                description: `Are you sure you want to kick ${participant.username} from this room? They can rejoin later using the room code.`,
+                                confirmText: "Kick User",
+                                variant: "default",
+                                onConfirm: () => handleKickUser(participant.userId, participant.username),
+                              })}
                             >
                               <UserX className="mr-2 h-4 w-4" />
                               Kick User
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
-                              onClick={() =>
-                                setShowBanDialog({
-                                  userId: participant.userId,
-                                  username: participant.username,
-                                })
-                              }
+                              onClick={() => setConfirmDialog({
+                                open: true,
+                                title: "Ban User",
+                                description: `Are you sure you want to ban ${participant.username} from this room? They will not be able to rejoin until unbanned.`,
+                                confirmText: "Ban User",
+                                variant: "destructive",
+                                onConfirm: () => handleBanUser(participant.userId, participant.username),
+                              })}
                               className="text-destructive focus:text-destructive"
                             >
                               <Ban className="mr-2 h-4 w-4" />
@@ -934,210 +850,44 @@ export default function RoomDetailsPage() {
         </CardContent>
       </Card>
 
-      {showDeleteDialog && (
+      {/* Consolidated Confirm Dialog */}
+      {confirmDialog && (
         <ConfirmDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          title="Delete Room"
-          description="Are you sure you want to delete this room? This action cannot be undone and all participants will be removed."
-          confirmText="Delete Room"
+          open={confirmDialog.open}
+          onOpenChange={(open) => !open && setConfirmDialog(null)}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmText={confirmDialog.confirmText}
           cancelText="Cancel"
-          onConfirm={handleDelete}
-          variant="destructive"
-        />
-      )}
-
-      {showLeaveDialog && (
-        <ConfirmDialog
-          open={showLeaveDialog}
-          onOpenChange={setShowLeaveDialog}
-          title="Leave Room"
-          description="Are you sure you want to leave this room? You can rejoin later using the room code."
-          confirmText="Leave Room"
-          cancelText="Cancel"
-          onConfirm={handleLeave}
-          variant="default"
-        />
-      )}
-
-      {showKickDialog && (
-        <ConfirmDialog
-          open={!!showKickDialog}
-          onOpenChange={() => setShowKickDialog(null)}
-          title="Kick User"
-          description={`Are you sure you want to kick ${showKickDialog.username} from this room? They can rejoin later using the room code.`}
-          confirmText="Kick User"
-          cancelText="Cancel"
-          onConfirm={handleKickUser}
-          variant="default"
-        />
-      )}
-
-      {showBanDialog && (
-        <ConfirmDialog
-          open={!!showBanDialog}
-          onOpenChange={() => setShowBanDialog(null)}
-          title="Ban User"
-          description={`Are you sure you want to ban ${showBanDialog.username} from this room? They will not be able to rejoin until unbanned.`}
-          confirmText="Ban User"
-          cancelText="Cancel"
-          onConfirm={handleBanUser}
-          variant="destructive"
+          onConfirm={confirmDialog.onConfirm}
+          variant={confirmDialog.variant}
         />
       )}
 
       {/* Invite Modal */}
-      <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Send Invites</DialogTitle>
-            <DialogDescription>
-              Search for registered users or enter an email address to send room invitations.
-            </DialogDescription>
-          </DialogHeader>
+      <InviteModal
+        open={showInviteModal}
+        onOpenChange={setShowInviteModal}
+        roomId={roomId}
+        onInvitesSent={fetchInvites}
+      />
 
-          <Tabs value={inviteTab} onValueChange={(v) => setInviteTab(v as "users" | "email")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="users">Search Users</TabsTrigger>
-              <TabsTrigger value="email">Enter Email</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="users" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="search">Search Users</Label>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search"
-                    placeholder="Search by username or email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-              </div>
-
-              {/* Selected Users */}
-              {selectedUsers.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Selected ({selectedUsers.length}/5)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsers.map(user => (
-                      <div
-                        key={user._id}
-                        className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                      >
-                        <span>{user.username}</span>
-                        <button
-                          onClick={() => toggleUserSelection(user)}
-                          className="hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Search Results */}
-              {searchQuery && (
-                <div className="space-y-2">
-                  <Label>Results</Label>
-                  <div className="border rounded-md max-h-[200px] overflow-y-auto">
-                    {isSearching ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
-                        Searching...
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      <div className="divide-y">
-                        {searchResults.map(user => {
-                          const isSelected = selectedUsers.find(u => u._id === user._id);
-                          return (
-                            <div
-                              key={user._id}
-                              onClick={() => toggleUserSelection(user)}
-                              className={`p-3 cursor-pointer hover:bg-secondary/50 transition-colors ${
-                                isSelected ? 'bg-secondary' : ''
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium text-sm">{user.username}</p>
-                                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                                </div>
-                                {isSelected && (
-                                  <Check className="h-4 w-4 text-primary" />
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        No users found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="email" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={customEmail}
-                  onChange={(e) => setCustomEmail(e.target.value)}
-                />
-                {customEmail && !isValidEmail(customEmail) && (
-                  <p className="text-xs text-destructive">Please enter a valid email address</p>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowInviteModal(false);
-                setSelectedUsers([]);
-                setCustomEmail("");
-                setSearchQuery("");
-              }}
-              disabled={isGeneratingInvite}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSendInvites}
-              disabled={
-                isGeneratingInvite ||
-                (inviteTab === "users" && selectedUsers.length === 0) ||
-                (inviteTab === "email" && (!customEmail || !isValidEmail(customEmail)))
-              }
-            >
-              {isGeneratingInvite ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Invite{inviteTab === "users" && selectedUsers.length > 1 ? "s" : ""}
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Room Settings Modal */}
+      {room && canManage && (
+        <RoomSettingsModal
+          open={showSettingsDialog}
+          onOpenChange={setShowSettingsDialog}
+          roomId={roomId}
+          currentSettings={{
+            name: room.name,
+            description: room.description,
+            isPrivate: room.isPrivate,
+            hasPassword: room.hasPassword,
+            maxParticipants: room.maxParticipants,
+          }}
+          onUpdate={fetchRoom}
+        />
+      )}
     </div>
   );
 }

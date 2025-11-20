@@ -29,7 +29,7 @@ async function dbConnect(): Promise<Mongoose> {
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false,
+      bufferCommands: false
     };
 
     console.log("Creating new database connection...");
