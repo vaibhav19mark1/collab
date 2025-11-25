@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function POST(
   request: NextRequest,
@@ -21,9 +22,9 @@ export async function POST(
 
     const { roomId } = await params;
     const body = await request.json();
-    const { userId } = body;
+    const { userId: kickedUserId } = body;
 
-    if (!userId) {
+    if (!kickedUserId) {
       return NextResponse.json(
         { success: false, error: "User ID is required" },
         { status: 400 }
@@ -51,7 +52,7 @@ export async function POST(
     }
 
     // Cannot kick the owner
-    if (room.isOwner(userId)) {
+    if (room.isOwner(kickedUserId)) {
       return NextResponse.json(
         { success: false, error: "Cannot kick the room owner" },
         { status: 400 }
@@ -59,7 +60,7 @@ export async function POST(
     }
 
     // Admins cannot kick other admins (only owner can)
-    if (room.isAdmin(userId) && !room.isOwner(session.user._id)) {
+    if (room.isAdmin(kickedUserId) && !room.isOwner(session.user._id)) {
       return NextResponse.json(
         {
           success: false,
@@ -70,11 +71,11 @@ export async function POST(
     }
 
     // Check if user is in the room
-    const participantIndex = room.participants.findIndex(
-      (p: { userId: string }) => p.userId === userId
+    const kickedParticipantIndex = room.participants.findIndex(
+      (p: { userId: string }) => p.userId === kickedUserId
     );
 
-    if (participantIndex === -1) {
+    if (kickedParticipantIndex === -1) {
       return NextResponse.json(
         { success: false, error: "User is not in this room" },
         { status: 400 }
@@ -82,14 +83,23 @@ export async function POST(
     }
 
     // Remove user from participants
-    const kickedUser = room.participants[participantIndex];
-    room.participants.splice(participantIndex, 1);
+    const { username: kickedUsername } =
+      room.participants[kickedParticipantIndex];
+    room.participants.splice(kickedParticipantIndex, 1);
 
     await room.save();
 
+    socketEmitter.participantKicked({
+      roomId: room._id.toString(),
+      kickedUserId,
+      kickedUsername,
+      kickedBy: session.user._id as string,
+      kickedByUsername: session.user.username as string,
+    });
+
     return NextResponse.json({
       success: true,
-      message: `${kickedUser.username} has been kicked from the room`,
+      message: `${kickedUsername} has been kicked from the room`,
     });
   } catch (error) {
     console.error("Error kicking user:", error);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function POST(
   request: NextRequest,
@@ -43,10 +44,17 @@ export async function POST(
 
     // Remove user from participants
     room.participants = room.participants.filter(
-      (p: { userId: { toString: () => string } }) => p.userId.toString() !== session.user._id
+      (p: { userId: { toString: () => string } }) =>
+        p.userId.toString() !== session.user._id
     );
 
     await room.save();
+
+    socketEmitter.participantLeft({
+      userId: session.user._id as string,
+      roomId: room._id.toString(),
+      username: session.user.username as string,
+    });
 
     return NextResponse.json({
       success: true,

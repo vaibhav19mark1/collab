@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function POST(
   request: NextRequest,
@@ -21,9 +22,9 @@ export async function POST(
 
     const { roomId } = await params;
     const body = await request.json();
-    const { userId, reason } = body;
+    const { userId: bannedUserId, reason } = body;
 
-    if (!userId) {
+    if (!bannedUserId) {
       return NextResponse.json(
         { success: false, error: "User ID is required" },
         { status: 400 }
@@ -51,7 +52,7 @@ export async function POST(
     }
 
     // Cannot ban the owner
-    if (room.isOwner(userId)) {
+    if (room.isOwner(bannedUserId)) {
       return NextResponse.json(
         { success: false, error: "Cannot ban the room owner" },
         { status: 400 }
@@ -59,7 +60,7 @@ export async function POST(
     }
 
     // Admins cannot ban other admins (only owner can)
-    if (room.isAdmin(userId) && !room.isOwner(session.user._id)) {
+    if (room.isAdmin(bannedUserId) && !room.isOwner(session.user._id)) {
       return NextResponse.json(
         {
           success: false,
@@ -70,7 +71,7 @@ export async function POST(
     }
 
     // Check if user is already banned
-    if (room.isBanned(userId)) {
+    if (room.isBanned(bannedUserId)) {
       return NextResponse.json(
         { success: false, error: "User is already banned" },
         { status: 400 }
@@ -78,11 +79,11 @@ export async function POST(
     }
 
     // Find user to get their username
-    const participant = room.participants.find(
-      (p: { userId: string }) => p.userId === userId
+    const bannedUser = room.participants.find(
+      (p: { userId: string }) => p.userId === bannedUserId
     );
 
-    if (!participant) {
+    if (!bannedUser) {
       return NextResponse.json(
         { success: false, error: "User is not in this room" },
         { status: 400 }
@@ -91,13 +92,13 @@ export async function POST(
 
     // Remove user from participants
     room.participants = room.participants.filter(
-      (p: { userId: string }) => p.userId !== userId
+      (p: { userId: string }) => p.userId !== bannedUserId
     );
 
     // Add to banned list
     room.bannedUsers.push({
-      userId,
-      username: participant.username,
+      userId: bannedUserId,
+      username: bannedUser.username,
       bannedBy: session.user._id,
       bannedAt: new Date(),
       reason,
@@ -105,9 +106,18 @@ export async function POST(
 
     await room.save();
 
+    socketEmitter.participantBanned({
+      roomId: room._id.toString(),
+      bannedUserId,
+      bannedUsername: bannedUser.username,
+      bannedBy: session.user._id as string,
+      bannedByUsername: session.user.username as string,
+      reason,
+    });
+
     return NextResponse.json({
       success: true,
-      message: `${participant.username} has been banned from the room`,
+      message: `${bannedUser.username} has been banned from the room`,
     });
   } catch (error) {
     console.error("Error banning user:", error);

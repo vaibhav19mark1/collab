@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
 import bcrypt from "bcryptjs";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,8 +41,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userId = session.user._id as string;
+
     // check if user is banned
-    if (room.isBanned(session.user._id)) {
+    if (room.isBanned(userId)) {
       return NextResponse.json(
         { success: false, error: "You are banned from this room" },
         { status: 403 }
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is already a participant
-    if (room.isParticipant(session.user._id)) {
+    if (room.isParticipant(userId)) {
       return NextResponse.json(
         {
           success: true,
@@ -98,6 +101,16 @@ export async function POST(request: NextRequest) {
     });
 
     await room.save();
+
+    socketEmitter.participantJoined({
+      roomId: room._id.toString(),
+      participant: {
+        userId,
+        username: session.user.username as string,
+        role: "member",
+        joinedAt: new Date(),
+      },
+    });
 
     return NextResponse.json({
       success: true,

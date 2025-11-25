@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter, redirect } from "next/navigation";
 import axios from "axios";
@@ -46,6 +46,18 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RoomSettingsModal } from "@/components/RoomSettingsModal";
 import { InviteModal } from "@/components/InviteModal";
+import { useUIStore } from "@/stores/uiStore";
+import { useRoomSocket } from "@/hooks/useRoomSocket";
+import type {
+  ParticipantJoinedPayload,
+  ParticipantLeftPayload,
+  ParticipantKickedPayload,
+  ParticipantBannedPayload,
+  ParticipantUnbannedPayload,
+  ParticipantRoleChangedPayload,
+  RoomSettingsUpdatedPayload,
+  RoomDeletedPayload,
+} from "@/types/socket.types";
 
 export default function RoomDetailsPage() {
   const { data: session, status } = useSession();
@@ -71,6 +83,7 @@ export default function RoomDetailsPage() {
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
   const [showInvites, setShowInvites] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const { setActiveRoomId, socketStatus } = useUIStore();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -78,12 +91,39 @@ export default function RoomDetailsPage() {
     }
   }, [status]);
 
+  // Wrap fetchRoom with useCallback
+  const fetchRoom = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`/api/rooms/${roomId}`);
+      setRoom(response.data.room);
+    } catch (error) {
+      console.error("Error fetching room:", error);
+      router.push("/rooms");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [roomId, router]);
+
+  const fetchInvites = async () => {
+    try {
+      const response = await axios.get(`/api/rooms/${roomId}/invite`);
+      setInvites(response.data.invites || []);
+    } catch (error) {
+      console.error("Error fetching invites:", error);
+    }
+  };
+
+  // Initial fetch and active room setup
   useEffect(() => {
     if (status === "authenticated" && roomId) {
       fetchRoom();
+      setActiveRoomId(roomId);
     }
-  }, [status, roomId]);
+    return () => setActiveRoomId(null);
+  }, [status, roomId, fetchRoom, setActiveRoomId]);
 
+  // Fetch invites when needed
   useEffect(() => {
     if (showInvites && room && session) {
       const isOwner = room.owner === session.user._id;
@@ -99,27 +139,89 @@ export default function RoomDetailsPage() {
     }
   }, [showInvites, room, session]);
 
-  const fetchRoom = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(`/api/rooms/${roomId}`);
-      setRoom(response.data.room);
-    } catch (error) {
-      console.error("Error fetching room:", error);
-      router.push("/rooms");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Socket event handlers
+  const handleParticipantJoined = useCallback(
+    (payload: ParticipantJoinedPayload) => {
+      fetchRoom(); // Refresh room data
+    },
+    [fetchRoom]
+  );
 
-  const fetchInvites = async () => {
-    try {
-      const response = await axios.get(`/api/rooms/${roomId}/invite`);
-      setInvites(response.data.invites || []);
-    } catch (error) {
-      console.error("Error fetching invites:", error);
-    }
-  };
+  const handleParticipantLeft = useCallback(
+    (payload: ParticipantLeftPayload) => {
+      fetchRoom(); // Refresh room data
+    },
+    [fetchRoom]
+  );
+
+  const handleParticipantKicked = useCallback(
+    (payload: ParticipantKickedPayload) => {
+      if (payload.kickedUserId === session?.user?._id) {
+        // Current user was kicked - redirect
+        router.push("/rooms");
+      } else {
+        // Someone else was kicked - refresh
+        fetchRoom();
+      }
+    },
+    [session, router, fetchRoom]
+  );
+
+  const handleParticipantBanned = useCallback(
+    (payload: ParticipantBannedPayload) => {
+      if (payload.bannedUserId === session?.user?._id) {
+        // Current user was banned - redirect
+        router.push("/rooms");
+      } else {
+        // Someone else was banned - refresh
+        fetchRoom();
+      }
+    },
+    [session, router, fetchRoom]
+  );
+
+  const handleParticipantUnbanned = useCallback(
+    (payload: ParticipantUnbannedPayload) => {
+      fetchRoom(); // Refresh banned users list
+    },
+    [fetchRoom]
+  );
+
+  const handleRoleChanged = useCallback(
+    (payload: ParticipantRoleChangedPayload) => {
+      fetchRoom(); // Refresh to get updated roles
+    },
+    [fetchRoom]
+  );
+
+  const handleSettingsUpdated = useCallback(
+    (payload: RoomSettingsUpdatedPayload) => {
+      fetchRoom(); // Refresh to get updated settings
+    },
+    [fetchRoom]
+  );
+
+  const handleRoomDeleted = useCallback(
+    (payload: RoomDeletedPayload) => {
+      // Room was deleted - redirect
+      router.push("/rooms");
+    },
+    [router]
+  );
+
+  // Use room socket hook for real-time updates
+  useRoomSocket({
+    roomId,
+    userId: session?.user?._id || "",
+    onParticipantJoined: handleParticipantJoined,
+    onParticipantLeft: handleParticipantLeft,
+    onParticipantKicked: handleParticipantKicked,
+    onParticipantBanned: handleParticipantBanned,
+    onParticipantUnbanned: handleParticipantUnbanned,
+    onRoleChanged: handleRoleChanged,
+    onSettingsUpdated: handleSettingsUpdated,
+    onRoomDeleted: handleRoomDeleted,
+  });
 
   const handleGenerateInviteLink = async (email?: string) => {
     setIsGeneratingInvite(true);
@@ -324,6 +426,36 @@ export default function RoomDetailsPage() {
     }
   };
 
+  // Connection status indicator component
+  const ConnectionStatus = () => {
+    const statusColors = {
+      connected: "bg-green-500",
+      connecting: "bg-yellow-500",
+      disconnected: "bg-red-500",
+      reconnecting: "bg-orange-500",
+    };
+
+    const statusLabels = {
+      connected: "Live",
+      connecting: "Connecting...",
+      disconnected: "Offline",
+      reconnecting: "Reconnecting...",
+    };
+
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <div
+          className={`h-2 w-2 rounded-full ${statusColors[socketStatus]} ${
+            socketStatus === "connected" ? "animate-pulse" : ""
+          }`}
+        />
+        <span className="text-muted-foreground">
+          {statusLabels[socketStatus]}
+        </span>
+      </div>
+    );
+  };
+
   if (status === "loading" || isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -366,6 +498,7 @@ export default function RoomDetailsPage() {
                   <span>Owner</span>
                 </div>
               )}
+              <ConnectionStatus />
             </div>
             <p className="text-muted-foreground">
               {room.description || "No description provided"}
@@ -612,28 +745,40 @@ export default function RoomDetailsPage() {
                             )}
 
                             <DropdownMenuItem
-                              onClick={() => setConfirmDialog({
-                                open: true,
-                                title: "Kick User",
-                                description: `Are you sure you want to kick ${participant.username} from this room? They can rejoin later using the room code.`,
-                                confirmText: "Kick User",
-                                variant: "default",
-                                onConfirm: () => handleKickUser(participant.userId, participant.username),
-                              })}
+                              onClick={() =>
+                                setConfirmDialog({
+                                  open: true,
+                                  title: "Kick User",
+                                  description: `Are you sure you want to kick ${participant.username} from this room? They can rejoin later using the room code.`,
+                                  confirmText: "Kick User",
+                                  variant: "default",
+                                  onConfirm: () =>
+                                    handleKickUser(
+                                      participant.userId,
+                                      participant.username
+                                    ),
+                                })
+                              }
                             >
                               <UserX className="mr-2 h-4 w-4" />
                               Kick User
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
-                              onClick={() => setConfirmDialog({
-                                open: true,
-                                title: "Ban User",
-                                description: `Are you sure you want to ban ${participant.username} from this room? They will not be able to rejoin until unbanned.`,
-                                confirmText: "Ban User",
-                                variant: "destructive",
-                                onConfirm: () => handleBanUser(participant.userId, participant.username),
-                              })}
+                              onClick={() =>
+                                setConfirmDialog({
+                                  open: true,
+                                  title: "Ban User",
+                                  description: `Are you sure you want to ban ${participant.username} from this room? They will not be able to rejoin until unbanned.`,
+                                  confirmText: "Ban User",
+                                  variant: "destructive",
+                                  onConfirm: () =>
+                                    handleBanUser(
+                                      participant.userId,
+                                      participant.username
+                                    ),
+                                })
+                              }
                               className="text-destructive focus:text-destructive"
                             >
                               <Ban className="mr-2 h-4 w-4" />

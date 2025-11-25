@@ -32,10 +32,8 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <div className="pt-16">
-            {children}
-          </div>
-          <Toaster richColors position="bottom-right" />
+          <div className="pt-16">{children}</div>
+          <Toaster richColors position="bottom-right" duration={3000} />
         </Providers>
       </body>
     </html>

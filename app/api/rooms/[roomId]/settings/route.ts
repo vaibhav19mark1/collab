@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
 import bcrypt from "bcryptjs";
+import { socketEmitter } from "@/lib/socket-emitter";
+import { RoomSettingsUpdatedPayload } from "@/types/socket.types";
 
 export async function PUT(
   request: NextRequest,
@@ -12,10 +14,7 @@ export async function PUT(
     const session = await auth();
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await dbConnect();
@@ -28,10 +27,7 @@ export async function PUT(
     const room = await Room.findById(roomId);
 
     if (!room) {
-      return NextResponse.json(
-        { error: "Room not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
     // Check if user is owner or admin
@@ -42,14 +38,15 @@ export async function PUT(
       );
     }
 
-    const updates: string[] = [];
+    const updates: RoomSettingsUpdatedPayload["updates"] = {};
 
     // Update name
     if (name !== undefined && name.trim()) {
+      const newRoomName = name.trim();
       const oldName = room.name;
-      room.name = name.trim();
+      room.name = newRoomName;
       if (oldName !== room.name) {
-        updates.push(`name from "${oldName}" to "${room.name}"`);
+        updates.name = newRoomName;
       }
     }
 
@@ -58,7 +55,7 @@ export async function PUT(
       const oldDesc = room.description || "";
       room.description = description.trim() || undefined;
       if (oldDesc !== (room.description || "")) {
-        updates.push("description");
+        updates.description = room.description;
       }
     }
 
@@ -69,14 +66,14 @@ export async function PUT(
         if (room.password) {
           room.password = undefined;
           room.isPrivate = false;
-          updates.push("removed password");
+          updates.hasPassword = false;
         }
       } else if (password.length >= 4) {
         // Set/update password
         const hashedPassword = await bcrypt.hash(password, 12);
         room.password = hashedPassword;
         room.isPrivate = true;
-        updates.push(room.password ? "updated password" : "added password");
+        updates.hasPassword = true;
       } else {
         return NextResponse.json(
           { error: "Password must be at least 4 characters" },
@@ -92,7 +89,7 @@ export async function PUT(
         const oldMax = room.maxParticipants;
         room.maxParticipants = newMax;
         if (oldMax !== newMax) {
-          updates.push(`max participants from ${oldMax} to ${newMax}`);
+          updates.maxParticipants = newMax;
         }
       } else {
         return NextResponse.json(
@@ -107,15 +104,28 @@ export async function PUT(
       const oldPrivacy = room.isPrivate;
       room.isPrivate = Boolean(isPrivate);
       if (oldPrivacy !== room.isPrivate) {
-        updates.push(`privacy to ${room.isPrivate ? "private" : "public"}`);
+        updates.isPrivate = room.isPrivate;
       }
     }
 
     await room.save();
 
+    const hasUpdates = Object.keys(updates).length > 0;
+
+    if (hasUpdates) {
+      socketEmitter.roomSettingsUpdated({
+        roomId: room._id.toString(),
+        updatedBy: session.user._id as string,
+        updatedByUsername: session.user.username as string,
+        updates,
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      message: updates.length > 0 ? "Room settings updated successfully" : "No changes made",
+      message: hasUpdates
+        ? "Room settings updated successfully"
+        : "No changes made",
       room: {
         _id: room._id.toString(),
         name: room.name,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function POST(
   request: NextRequest,
@@ -59,7 +60,7 @@ export async function POST(
     }
 
     // Find banned user to get username
-    const bannedUser = room.bannedUsers.find(
+    const unBannedUser = room.bannedUsers.find(
       (b: { userId: string }) => b.userId === userId
     );
 
@@ -70,9 +71,17 @@ export async function POST(
 
     await room.save();
 
+    socketEmitter.participantUnbanned({
+      roomId: room._id.toString(),
+      unbannedUserId: userId,
+      unbannedUsername: unBannedUser?.username,
+      unbannedBy: session.user._id as string,
+      unbannedByUsername: session.user.username as string,
+    });
+
     return NextResponse.json({
       success: true,
-      message: `${bannedUser?.username || "User"} has been unbanned`,
+      message: `${unBannedUser?.username || "User"} has been unbanned`,
     });
   } catch (error) {
     console.error("Error unbanning user:", error);

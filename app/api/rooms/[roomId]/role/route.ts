@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function PATCH(
   request: NextRequest,
@@ -74,9 +75,21 @@ export async function PATCH(
       );
     }
 
+    const oldRole = participant.role;
+
     // Update role
     participant.role = role;
     await room.save();
+
+    socketEmitter.participantRoleChanged({
+      roomId: room._id.toString(),
+      userId,
+      username: participant.username,
+      oldRole,
+      newRole: role,
+      changedBy: session.user._id as string,
+      changedByUsername: session.user.username as string,
+    });
 
     return NextResponse.json({
       success: true,

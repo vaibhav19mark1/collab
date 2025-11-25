@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
+import { socketEmitter } from "@/lib/socket-emitter";
 
 export async function GET(
   request: NextRequest,
@@ -30,13 +31,20 @@ export async function GET(
       isPrivate: boolean;
       password?: string;
       maxParticipants: number;
-      participants: Array<{ userId: string; username: string; role: string; joinedAt: Date }>;
+      participants: Array<{
+        userId: string;
+        username: string;
+        role: string;
+        joinedAt: Date;
+      }>;
       lastActivity: Date;
       createdAt: Date;
       updatedAt: Date;
     };
 
-    const room = await Room.findById(roomId).select("-password").lean() as unknown as RoomDocument | null;
+    const room = (await Room.findById(roomId)
+      .select("-password")
+      .lean()) as unknown as RoomDocument | null;
 
     if (!room) {
       return NextResponse.json(
@@ -48,9 +56,7 @@ export async function GET(
     // Check if user has access to this room
     const hasAccess =
       room.owner.toString() === session.user._id ||
-      room.participants.some(
-        (p) => p.userId.toString() === session.user._id
-      );
+      room.participants.some((p) => p.userId.toString() === session.user._id);
 
     if (!hasAccess) {
       return NextResponse.json(
@@ -124,6 +130,12 @@ export async function DELETE(
         { status: 403 }
       );
     }
+
+    socketEmitter.roomDeleted({
+      roomId: room._id.toString(),
+      deletedBy: session.user._id as string,
+      deletedByUsername: session.user.username as string,
+    });
 
     // Soft delete - set isActive to false
     room.isActive = false;
