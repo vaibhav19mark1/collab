@@ -8,6 +8,7 @@ import {
 import { useSession } from "next-auth/react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -37,7 +38,7 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [status, setStatus] =
     useState<SocketContextValue["status"]>("disconnected");
-    
+
   useEffect(() => {
     if (sessionStatus !== "authenticated" || !session) return;
 
@@ -50,7 +51,8 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 3,
+      reconnectionAttempts: 5,
+      timeout: 10000,
     });
 
     newSocket.on("connect", () => {
@@ -74,7 +76,7 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     newSocket.io.on("reconnect_attempt", () => {
-      console.log("🔄 Attempting to reconnect...");
+      console.log("Attempting to reconnect...");
       setStatus("reconnecting");
       useUIStore.getState().setSocketStatus("reconnecting");
     });
@@ -87,9 +89,13 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     newSocket.io.on("reconnect_failed", () => {
-      console.error("❌ Socket.io reconnection failed");
+      console.error("Socket.io reconnection failed");
       setStatus("disconnected");
       useUIStore.getState().setSocketStatus("disconnected");
+      toast.error(
+        "Unable to reconnect to the server. Please check your internet connection and try again.",
+        { duration: 6000 }
+      );
     });
 
     setSocket(newSocket);

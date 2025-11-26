@@ -84,6 +84,8 @@ const io = new SocketIOServer(httpServer, {
     origin: process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000",
     credentials: true,
   },
+  pingInterval: 5000,
+  pingTimeout: 3000,
 });
 
 // auth middleware
