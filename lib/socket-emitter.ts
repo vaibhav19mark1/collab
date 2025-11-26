@@ -9,22 +9,35 @@ import {
   RoomSettingsUpdatedPayload,
 } from "@/types/socket.types";
 
+type SocketEventPayload =
+  | ParticipantJoinedPayload
+  | ParticipantLeftPayload
+  | ParticipantKickedPayload
+  | ParticipantBannedPayload
+  | ParticipantUnbannedPayload
+  | ParticipantRoleChangedPayload
+  | RoomSettingsUpdatedPayload
+  | RoomDeletedPayload;
+
 // Use HTTP POST to emit events from serverless functions
-const emitToSocketServer = async (event: string, payload: any) => {
-  const socketUrl =
-    process.env.SOCKET_URL || "http://localhost:3001";
-  
+const emitToSocketServer = async (
+  event: string,
+  payload: SocketEventPayload
+) => {
+  const socketUrl = process.env.SOCKET_URL || "http://localhost:3001";
+
   console.log(`[EMITTER] Sending ${event} to socket server`, payload);
-  
+
   try {
     const response = await fetch(`${socketUrl}/emit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-admin-key": process.env.SOCKET_ADMIN_KEY || "",
       },
       body: JSON.stringify({ event, payload }),
     });
-    
+
     if (!response.ok) {
       console.error(`[EMITTER] Failed to emit ${event}:`, response.statusText);
     }

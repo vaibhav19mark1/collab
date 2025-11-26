@@ -1,26 +1,58 @@
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { parse } from "cookie";
-import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const PORT = process.env.SOCKET_IO_PORT || 3001;
+
+// Helper for safe comparison
+const safeCompare = (a: string, b: string) => {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+};
 
 const httpServer = createServer((req, res) => {
   // Handle HTTP POST requests for emitting events
   if (req.method === "POST" && req.url === "/emit") {
     let body = "";
 
+    // Check for authentication
+    const adminKey = process.env.SOCKET_ADMIN_KEY;
+    const requestKey = req.headers["x-admin-key"] as string;
+
+    if (!adminKey || !requestKey || !safeCompare(adminKey, requestKey)) {
+      console.warn("[HTTP] Unauthorized attempt to access /emit");
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
     req.on("data", (chunk) => {
+      // Body Size Limit (1MB)
+      if (body.length + chunk.length > 1e6) {
+        res.writeHead(413, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Payload too large" }));
+        req.destroy();
+        return;
+      }
       body += chunk.toString();
     });
 
     req.on("end", () => {
       try {
+        if (!body) throw new Error("Empty body");
         const { event, payload } = JSON.parse(body);
+
+        // Payload Validation
+        if (!payload || !payload.roomId) {
+          throw new Error("Invalid payload: missing roomId");
+        }
+
         console.log(`[HTTP] Received event ${event}`, payload);
 
         // Emit the event to the appropriate room
-        if (event.startsWith("server:")) {
+        if (event && event.startsWith("server:")) {
           const clientEvent = event.replace("server:", "");
           io.to(`room:${payload.roomId}`).emit(clientEvent, payload);
           console.log(
@@ -30,10 +62,15 @@ const httpServer = createServer((req, res) => {
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true }));
-      } catch (error) {
-        console.error("[HTTP] Error processing event:", error);
+      } catch (error: any) {
+        console.error("[HTTP] Error processing event:", error.message);
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: false, error: "Invalid request" }));
+        res.end(
+          JSON.stringify({
+            success: false,
+            error: error.message || "Invalid request",
+          })
+        );
       }
     });
   } else {
@@ -65,13 +102,7 @@ io.use(async (socket, next) => {
     if (!sessionToken) {
       return next(new Error("Authentication error: No session token"));
     }
-
     socket.data.sessionToken = sessionToken;
-
-    // const decodedToken = jwt.verify(sessionToken, process.env.AUTH_SECRET!);
-    // console.log({ decodedToken });
-    // socket.data.userId = decodedToken.sub;
-
     next();
   } catch (error) {
     console.error(error);
