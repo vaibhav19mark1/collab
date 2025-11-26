@@ -60,6 +60,13 @@ const httpServer = createServer((req, res) => {
           );
         }
 
+        if (event === "chat:message") {
+          console.log(
+            `[SERVER] Broadcasting chat:message to room:${payload.roomId}`
+          );
+          io.to(`room:${payload.roomId}`).emit(event, payload);
+        }
+
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true }));
       } catch (error: any) {
@@ -163,6 +170,26 @@ io.on("connection", (socket) => {
 
   socket.on("server:room:deleted", (payload: any) => {
     io.to(`room:${payload.roomId}`).emit("room:deleted", payload);
+  });
+
+  // chat event handlers
+  socket.on("chat:send_message", async ({ roomId }) => {
+    console.log(`[CHAT] Message from ${socket.id} in room ${roomId}`);
+  });
+
+  socket.on("chat:typing", ({ roomId, isTyping }) => {
+    console.log(
+      `[CHAT] Typing ${isTyping ? "start" : "stop"} from ${
+        socket.id
+      } in room ${roomId}`
+    );
+
+    socket.to(`room:${roomId}`).emit("chat:typing", {
+      roomId,
+      userId: socket.data.userId || "unknown",
+      username: socket.data.username || "Unknown User",
+      isTyping,
+    });
   });
 });
 

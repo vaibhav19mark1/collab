@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   ParticipantBannedPayload,
   ParticipantJoinedPayload,
@@ -7,6 +8,7 @@ import {
   ParticipantUnbannedPayload,
   RoomDeletedPayload,
   RoomSettingsUpdatedPayload,
+  ChatMessagePayload,
 } from "@/types/socket.types";
 
 type SocketEventPayload =
@@ -19,30 +21,29 @@ type SocketEventPayload =
   | RoomSettingsUpdatedPayload
   | RoomDeletedPayload;
 
+const SOCKET_SERVER_BASE_URL =
+  process.env.SOCKET_URL || "http://localhost:3001";
+const ADMIN_KEY = process.env.SOCKET_ADMIN_KEY!;
+
 // Use HTTP POST to emit events from serverless functions
 const emitToSocketServer = async (
   event: string,
   payload: SocketEventPayload
 ) => {
-  const socketUrl = process.env.SOCKET_URL || "http://localhost:3001";
-
   console.log(`[EMITTER] Sending ${event} to socket server`, payload);
-
   try {
-    const response = await fetch(`${socketUrl}/emit`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-key": process.env.SOCKET_ADMIN_KEY || "",
-      },
-      body: JSON.stringify({ event, payload }),
-    });
-
-    if (!response.ok) {
-      console.error(`[EMITTER] Failed to emit ${event}:`, response.statusText);
-    }
+    await axios.post(
+      `${SOCKET_SERVER_BASE_URL}/emit`,
+      { event, payload },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": ADMIN_KEY,
+        },
+      }
+    );
   } catch (error) {
-    console.error(`[EMITTER] Error emitting ${event}:`, error);
+    console.error(error);
   }
 };
 
@@ -77,6 +78,11 @@ const socketEmitter = {
 
   roomDeleted: (payload: RoomDeletedPayload) => {
     emitToSocketServer("server:room:deleted", payload);
+  },
+
+  chatMessage: async (payload: ChatMessagePayload) => {
+    console.log("[EMITTER] Emitting chat:message event:", payload);
+    await emitToSocketServer("chat:message", payload);
   },
 };
 

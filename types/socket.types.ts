@@ -68,6 +68,22 @@ interface RoomDeletedPayload {
   deletedByUsername: string;
 }
 
+interface ChatMessagePayload {
+  roomId: string;
+  messageId: string;
+  userId: string;
+  username: string;
+  message: string;
+  timestamp: Date;
+}
+
+interface ChatTypingPayload {
+  roomId: string;
+  userId: string;
+  username: string;
+  isTyping: boolean;
+}
+
 // Socket event types
 interface ServerToClientEvents {
   "participant:joined": (payload: ParticipantJoinedPayload) => void;
@@ -78,16 +94,22 @@ interface ServerToClientEvents {
   "participant:role_changed": (payload: ParticipantRoleChangedPayload) => void;
   "room:settings_updated": (payload: RoomSettingsUpdatedPayload) => void;
   "room:deleted": (payload: RoomDeletedPayload) => void;
+  "chat:message": (payload: ChatMessagePayload) => void;
+  "chat:typing": (payload: ChatTypingPayload) => void;
 }
 
 interface ClientToServerEvents {
   "room:join": (roomId: string) => void;
   "room:leave": (roomId: string) => void;
+  "chat:send_message": (payload: { roomId: string; message: string }) => void;
+  "chat:typing": (payload: { roomId: string; isTyping: boolean }) => void;
 }
 
 export type {
+  // socket events
   ServerToClientEvents,
   ClientToServerEvents,
+  // room
   ParticipantJoinedPayload,
   ParticipantLeftPayload,
   ParticipantKickedPayload,
@@ -96,4 +118,7 @@ export type {
   ParticipantRoleChangedPayload,
   RoomSettingsUpdatedPayload,
   RoomDeletedPayload,
+  // chat
+  ChatMessagePayload,
+  ChatTypingPayload,
 };
