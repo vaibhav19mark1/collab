@@ -39,13 +39,14 @@ import {
   Link,
   X,
   Mail,
-  Search,
+  MessageSquare,
 } from "lucide-react";
 import { Room, Participant, Invite } from "@/types/room.types";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RoomSettingsModal } from "@/components/RoomSettingsModal";
 import { InviteModal } from "@/components/InviteModal";
+import RoomChat from "@/components/RoomChat";
 import { useUIStore } from "@/stores/uiStore";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import type {
@@ -83,7 +84,9 @@ export default function RoomDetailsPage() {
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
   const [showInvites, setShowInvites] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const { setActiveRoomId, socketStatus } = useUIStore();
+  const setActiveRoomId = useUIStore((s) => s.setActiveRoomId);
+  const socketStatus = useUIStore((s) => s.socketStatus);
+  const toggleChat = useUIStore((s) => s.toggleChat);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -121,7 +124,7 @@ export default function RoomDetailsPage() {
       setActiveRoomId(roomId);
     }
     return () => setActiveRoomId(null);
-  }, [status, roomId, fetchRoom, setActiveRoomId]);
+  }, [status, roomId, fetchRoom]);
 
   // Fetch invites when needed
   useEffect(() => {
@@ -213,6 +216,7 @@ export default function RoomDetailsPage() {
   useRoomSocket({
     roomId,
     userId: session?.user?._id || "",
+    username: session?.user?.username as string,
     onParticipantJoined: handleParticipantJoined,
     onParticipantLeft: handleParticipantLeft,
     onParticipantKicked: handleParticipantKicked,
@@ -506,6 +510,14 @@ export default function RoomDetailsPage() {
           </div>
 
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleChat}
+              title="Toggle Chat"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
             {canManage && (
               <>
                 <Button
@@ -1033,6 +1045,9 @@ export default function RoomDetailsPage() {
           onUpdate={fetchRoom}
         />
       )}
+
+      {/* Chat Panel */}
+      <RoomChat roomId={roomId} />
     </div>
   );
 }

@@ -99,7 +99,7 @@ interface ServerToClientEvents {
 }
 
 interface ClientToServerEvents {
-  "room:join": (roomId: string) => void;
+  "room:join": (roomId: string, userData?: { userId: string; username: string }) => void;
   "room:leave": (roomId: string) => void;
   "chat:send_message": (payload: { roomId: string; message: string }) => void;
   "chat:typing": (payload: { roomId: string; isTyping: boolean }) => void;

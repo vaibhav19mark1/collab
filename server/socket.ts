@@ -121,9 +121,17 @@ io.use(async (socket, next) => {
 io.on("connection", (socket) => {
   console.log(`Client socket connected: ${socket.id}`);
 
-  socket.on("room:join", (roomId) => {
+  socket.on("room:join", (roomId, userData) => {
     socket.join(`room:${roomId}`);
-    console.log(`Client ${socket.id} joined room ${roomId}`);
+    if (userData) {
+      socket.data.userId = userData.userId;
+      socket.data.username = userData.username;
+    }
+    console.log(
+      `Client ${socket.id} (${
+        socket.data.username || "unknown"
+      }) joined room ${roomId}`
+    );
   });
 
   socket.on("room:leave", (roomId) => {
@@ -173,10 +181,6 @@ io.on("connection", (socket) => {
   });
 
   // chat event handlers
-  socket.on("chat:send_message", async ({ roomId }) => {
-    console.log(`[CHAT] Message from ${socket.id} in room ${roomId}`);
-  });
-
   socket.on("chat:typing", ({ roomId, isTyping }) => {
     console.log(
       `[CHAT] Typing ${isTyping ? "start" : "stop"} from ${

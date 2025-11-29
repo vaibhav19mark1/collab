@@ -19,12 +19,12 @@ export function useRoomChat({
   enabled = true,
 }: UseRoomChatOptions) {
   const { socket, isConnected, emit, on, off } = useSocket();
-  const { addMessage, setTypingUser } = useChatStore((state) => ({
-    addMessage: state.addMessage,
-    setTypingUser: state.setTypingUser,
-  }));
+  const addMessage = useChatStore((state) => state.addMessage);
+  const setTypingUser = useChatStore((state) => state.setTypingUser);
   const chatOpen = useUIStore((state) => state.chatOpen);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingSentRef = useRef<number>(0);
+  const typingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // handles incoming chat messages
   useEffect(() => {
@@ -57,24 +57,44 @@ export function useRoomChat({
     if (!socket || !enabled) return;
 
     const handleTyping = (payload: ChatTypingPayload) => {
-      console.log("[CLIENT] Received chat:typing:", payload);
-
       // Don't show own typing indicator
       if (payload.userId === userId) return;
 
       setTypingUser(roomId, payload.userId, payload.username, payload.isTyping);
 
-      // Auto-clear typing indicator after 3 seconds
+      // Clear existing timeout for this user
+      if (typingTimeoutsRef.current.has(payload.userId)) {
+        clearTimeout(typingTimeoutsRef.current.get(payload.userId)!);
+        typingTimeoutsRef.current.delete(payload.userId);
+      }
+
+      // If user is typing, set a fallback timeout to clear it
       if (payload.isTyping) {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           setTypingUser(roomId, payload.userId, payload.username, false);
-        }, 3000);
+          typingTimeoutsRef.current.delete(payload.userId);
+        }, 5000); // 5 seconds fallback (longer than sender's throttle)
+        typingTimeoutsRef.current.set(payload.userId, timeout);
       }
     };
 
     on("chat:typing", handleTyping);
-    return () => off("chat:typing", handleTyping);
+    return () => {
+      off("chat:typing", handleTyping);
+      // Clear all pending timeouts on unmount/re-run
+      typingTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      typingTimeoutsRef.current.clear();
+    };
   }, [socket, enabled, roomId, userId, setTypingUser, on, off]);
+
+  // Cleanup sender timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Send typing indicator
   const sendTypingIndicator = useCallback(
@@ -88,15 +108,23 @@ export function useRoomChat({
 
   // debounced typing handler
   const handleTyping = useCallback(() => {
-    sendTypingIndicator(true);
+    const now = Date.now();
+
+    // Throttle sending "true" every 2 seconds
+    if (now - lastTypingSentRef.current > 2000) {
+      sendTypingIndicator(true);
+      lastTypingSentRef.current = now;
+    }
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
+    // Debounce sending "false" (stop typing)
     typingTimeoutRef.current = setTimeout(() => {
       sendTypingIndicator(false);
-    }, 2000);
+      lastTypingSentRef.current = 0; // Reset throttle
+    }, 3000);
   }, [sendTypingIndicator]);
 
   // stop typing handler
@@ -106,6 +134,7 @@ export function useRoomChat({
       typingTimeoutRef.current = null;
     }
     sendTypingIndicator(false);
+    lastTypingSentRef.current = 0;
   }, [sendTypingIndicator]);
 
   return {

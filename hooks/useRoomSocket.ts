@@ -16,6 +16,7 @@ import { toast } from "sonner";
 interface UseRoomSocketOptions {
   roomId: string;
   userId: string;
+  username?: string;
   onParticipantJoined?: (payload: ParticipantJoinedPayload) => void;
   onParticipantLeft?: (payload: ParticipantLeftPayload) => void;
   onParticipantKicked?: (payload: ParticipantKickedPayload) => void;
@@ -29,6 +30,7 @@ interface UseRoomSocketOptions {
 export const useRoomSocket = ({
   roomId,
   userId,
+  username,
   onParticipantJoined,
   onParticipantLeft,
   onParticipantKicked,
@@ -49,7 +51,7 @@ export const useRoomSocket = ({
   useEffect(() => {
     if (!isConnected || !roomId || hadJoinedRef.current) return;
     console.log(`Joining room channel: ${roomId}`);
-    emit("room:join", roomId);
+    emit("room:join", roomId, username ? { userId, username } : undefined);
     hadJoinedRef.current = true;
 
     return () => {
@@ -59,7 +61,7 @@ export const useRoomSocket = ({
         hadJoinedRef.current = false;
       }
     };
-  }, [isConnected, roomId]);
+  }, [isConnected, roomId, userId, username, emit]);
 
   // Participant joined handler
   useEffect(() => {

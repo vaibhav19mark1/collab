@@ -7,6 +7,7 @@ export interface ChatMessage {
   username: string;
   message: string;
   timestamp: Date;
+  status?: "sending" | "sent" | "error";
 }
 
 interface TypingUser {
@@ -21,6 +22,11 @@ interface ChatState {
 
   // actions
   addMessage: (roomId: string, message: ChatMessage) => void;
+  updateMessage: (
+    roomId: string,
+    messageId: string,
+    updates: Partial<ChatMessage>
+  ) => void;
   setMessages: (roomId: string, messages: ChatMessage[]) => void;
   clearMessages: (roomId: string) => void;
 
@@ -46,12 +52,32 @@ export const useChatStore = create<ChatState>()(
       unreadCountsByRoom: {},
 
       addMessage: (roomId, message) =>
-        set((state) => ({
-          messagesByRoom: {
-            ...state.messagesByRoom,
-            [roomId]: [...(state.messagesByRoom[roomId] || []), message],
-          },
-        })),
+        set((state) => {
+          const roomMessages = state.messagesByRoom[roomId] || [];
+          // If message with same ID exists, don't add duplicate
+          if (roomMessages.some((m) => m.messageId === message.messageId)) {
+            return state;
+          }
+          return {
+            messagesByRoom: {
+              ...state.messagesByRoom,
+              [roomId]: [...roomMessages, message],
+            },
+          };
+        }),
+
+      updateMessage: (roomId, messageId, updates) =>
+        set((state) => {
+          const roomMessages = state.messagesByRoom[roomId] || [];
+          return {
+            messagesByRoom: {
+              ...state.messagesByRoom,
+              [roomId]: roomMessages.map((msg) =>
+                msg.messageId === messageId ? { ...msg, ...updates } : msg
+              ),
+            },
+          };
+        }),
 
       setMessages: (roomId, messages) =>
         set((state) => ({

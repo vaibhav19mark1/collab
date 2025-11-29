@@ -82,7 +82,7 @@ const socketEmitter = {
 
   chatMessage: async (payload: ChatMessagePayload) => {
     console.log("[EMITTER] Emitting chat:message event:", payload);
-    await emitToSocketServer("chat:message", payload);
+    emitToSocketServer("chat:message", payload);
   },
 };
 
