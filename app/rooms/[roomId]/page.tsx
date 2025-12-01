@@ -37,7 +37,6 @@ import {
   Ban,
   UserCheck,
   Link,
-  X,
   Mail,
   MessageSquare,
 } from "lucide-react";
@@ -94,7 +93,6 @@ export default function RoomDetailsPage() {
     }
   }, [status]);
 
-  // Wrap fetchRoom with useCallback
   const fetchRoom = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -199,9 +197,21 @@ export default function RoomDetailsPage() {
 
   const handleSettingsUpdated = useCallback(
     (payload: RoomSettingsUpdatedPayload) => {
-      fetchRoom(); // Refresh to get updated settings
+      // Optimistically update room state from socket event
+      setRoom((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          name: payload.updates.name ?? prev.name,
+          description: payload.updates.description ?? prev.description,
+          isPrivate: payload.updates.isPrivate ?? prev.isPrivate,
+          maxParticipants:
+            payload.updates.maxParticipants ?? prev.maxParticipants,
+          lastActivity: new Date(),
+        };
+      });
     },
-    [fetchRoom]
+    []
   );
 
   const handleRoomDeleted = useCallback(
@@ -865,7 +875,7 @@ export default function RoomDetailsPage() {
       )}
 
       {/* Pending Invites Section - Only visible to owner/admin */}
-      {canManage && (
+      {/* {canManage && (
         <Card className="mt-6">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -976,7 +986,7 @@ export default function RoomDetailsPage() {
             </CardContent>
           )}
         </Card>
-      )}
+      )} */}
 
       {/* Collaboration Tools Placeholder */}
       <Card className="mt-6">
@@ -1022,15 +1032,17 @@ export default function RoomDetailsPage() {
       )}
 
       {/* Invite Modal */}
-      <InviteModal
-        open={showInviteModal}
-        onOpenChange={setShowInviteModal}
-        roomId={roomId}
-        onInvitesSent={fetchInvites}
-      />
+      {showInviteModal && (
+        <InviteModal
+          open={showInviteModal}
+          onOpenChange={setShowInviteModal}
+          roomId={roomId}
+          onInvitesSent={fetchInvites}
+        />
+      )}
 
       {/* Room Settings Modal */}
-      {room && canManage && (
+      {room && canManage && showSettingsDialog && (
         <RoomSettingsModal
           open={showSettingsDialog}
           onOpenChange={setShowSettingsDialog}
@@ -1042,7 +1054,20 @@ export default function RoomDetailsPage() {
             hasPassword: room.hasPassword,
             maxParticipants: room.maxParticipants,
           }}
-          onUpdate={fetchRoom}
+          onSettingsUpdated={(updates) => {
+            // Optimistically update room state without refetching
+            setRoom((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                name: updates.name,
+                description: updates.description,
+                isPrivate: updates.isPrivate,
+                maxParticipants: updates.maxParticipants,
+                lastActivity: new Date(),
+              };
+            });
+          }}
         />
       )}
 

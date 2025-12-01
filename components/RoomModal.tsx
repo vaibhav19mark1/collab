@@ -17,14 +17,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Loader2, Lock, Users } from "lucide-react";
+import { Room } from "@/types/room.types";
 
 interface RoomModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onRoomCreated?: (room: Room) => void;
+  onRoomJoined?: (room: Room) => void;
 }
 
-export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
+export function RoomModal({
+  isOpen,
+  onClose,
+  onRoomCreated,
+  onRoomJoined,
+}: RoomModalProps) {
   const [activeTab, setActiveTab] = useState<"create" | "join">("create");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -61,13 +68,20 @@ export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
         throw new Error("Password must be at least 6 characters");
       }
 
-      await axios.post("/api/rooms/create", {
+      const response = await axios.post("/api/rooms/create", {
         name: createForm.name.trim(),
         description: createForm.description.trim() || undefined,
         isPrivate: createForm.isPrivate,
         password: createForm.isPrivate ? createForm.password : undefined,
         maxParticipants: createForm.maxParticipants,
       });
+
+      const newRoom = response.data.room;
+
+      // Call optimistic update callback
+      if (newRoom) {
+        onRoomCreated?.(newRoom);
+      }
 
       // Reset form
       setCreateForm({
@@ -78,10 +92,10 @@ export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
         maxParticipants: 10,
       });
 
-      onSuccess?.();
       onClose();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -98,26 +112,40 @@ export function RoomModal({ isOpen, onClose, onSuccess }: RoomModalProps) {
         throw new Error("Room code is required");
       }
 
-      await axios.post("/api/rooms/join", {
+      const response = await axios.post("/api/rooms/join", {
         roomCode: joinForm.roomCode.trim().toUpperCase(),
         password: joinForm.password || undefined,
       });
+
+      const joinedRoom = response.data.room;
+
+      // Call optimistic update callback
+      if (joinedRoom) {
+        onRoomJoined?.(joinedRoom);
+      }
 
       // Reset form
       setJoinForm({ roomCode: "", password: "" });
       setNeedsPassword(false);
 
-      onSuccess?.();
       onClose();
     } catch (err) {
       // If password is required but not provided
-      if (err instanceof Error && 'response' in err) {
-        const axiosError = err as { response?: { status?: number; data?: { error?: string } } };
-        if (axiosError.response?.status === 400 && axiosError.response?.data?.error?.includes("Password")) {
+      if (err instanceof Error && "response" in err) {
+        const axiosError = err as {
+          response?: { status?: number; data?: { error?: string } };
+        };
+        if (
+          axiosError.response?.status === 400 &&
+          axiosError.response?.data?.error?.includes("Password")
+        ) {
           setNeedsPassword(true);
           setError(axiosError.response.data.error);
         } else {
-          const errorMessage = axiosError.response?.data?.error || err.message || "An error occurred";
+          const errorMessage =
+            axiosError.response?.data?.error ||
+            err.message ||
+            "An error occurred";
           setError(errorMessage);
         }
       } else if (err instanceof Error) {

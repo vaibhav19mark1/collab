@@ -196,6 +196,12 @@ export const useRoomSocket = ({
     if (!socket) return;
 
     const handleSettingsUpdated = (payload: RoomSettingsUpdatedPayload) => {
+      // Don't show toast if the current user updated the settings
+      if (payload.updatedBy === userId) {
+        onSettingsUpdated?.(payload);
+        return;
+      }
+
       if (!mute) {
         toast.info(`Room settings updated by ${payload.updatedByUsername}`, {
           duration: 3000,
@@ -206,7 +212,7 @@ export const useRoomSocket = ({
 
     on("room:settings_updated", handleSettingsUpdated);
     return () => off("room:settings_updated", handleSettingsUpdated);
-  }, [socket, mute, onSettingsUpdated]);
+  }, [socket, mute, onSettingsUpdated, userId]);
 
   // Room deleted handler
   useEffect(() => {

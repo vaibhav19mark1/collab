@@ -57,7 +57,6 @@ const inviteSchema = new Schema<Invite>(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
     acceptedAt: {
       type: Date,

@@ -29,8 +29,8 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 interface RoomCardProps {
   room: Room;
   currentUserId: string;
-  onDelete?: () => void;
-  onLeave?: () => void;
+  onDelete?: (roomId: string) => void;
+  onLeave?: (roomId: string) => void;
 }
 
 export function RoomCard({
@@ -59,14 +59,17 @@ export function RoomCard({
   const handleDelete = async () => {
     setIsDeleting(true);
     setShowDeleteDialog(false);
+
+    // Call optimistic update callback
+    onDelete?.(room._id);
+
     try {
       await axios.delete(`/api/rooms/${room._id}`);
-
       toast.success("Room deleted successfully");
-      onDelete?.();
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete room");
+      // Error will be handled by refetch in parent
     } finally {
       setIsDeleting(false);
     }
@@ -75,14 +78,17 @@ export function RoomCard({
   const handleLeave = async () => {
     setIsLeaving(true);
     setShowLeaveDialog(false);
+
+    // Call optimistic update callback
+    onLeave?.(room._id);
+
     try {
       await axios.post(`/api/rooms/${room._id}/leave`);
-
       toast.success("Left room successfully");
-      onLeave?.();
     } catch (error) {
       console.error(error);
       toast.error("Failed to leave room");
+      // Error will be handled by refetch in parent
     } finally {
       setIsLeaving(false);
     }

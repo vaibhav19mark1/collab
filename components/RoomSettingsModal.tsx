@@ -30,7 +30,12 @@ interface RoomSettingsModalProps {
     hasPassword: boolean;
     maxParticipants: number;
   };
-  onUpdate: () => void;
+  onSettingsUpdated?: (updates: {
+    name: string;
+    description?: string;
+    isPrivate: boolean;
+    maxParticipants: number;
+  }) => void;
 }
 
 export function RoomSettingsModal({
@@ -38,12 +43,16 @@ export function RoomSettingsModal({
   onOpenChange,
   roomId,
   currentSettings,
-  onUpdate,
+  onSettingsUpdated,
 }: RoomSettingsModalProps) {
   const [name, setName] = useState(currentSettings.name);
-  const [description, setDescription] = useState(currentSettings.description || "");
+  const [description, setDescription] = useState(
+    currentSettings.description || ""
+  );
   const [isPrivate, setIsPrivate] = useState(currentSettings.isPrivate);
-  const [maxParticipants, setMaxParticipants] = useState(currentSettings.maxParticipants);
+  const [maxParticipants, setMaxParticipants] = useState(
+    currentSettings.maxParticipants
+  );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [removePassword, setRemovePassword] = useState(false);
@@ -97,7 +106,15 @@ export function RoomSettingsModal({
       await axios.put(`/api/rooms/${roomId}/settings`, payload);
 
       toast.success("Room settings updated successfully");
-      onUpdate();
+
+      // Call the callback with updated settings for optimistic update
+      onSettingsUpdated?.({
+        name: payload.name,
+        description: payload.description,
+        isPrivate: payload.isPrivate,
+        maxParticipants: payload.maxParticipants,
+      });
+
       onOpenChange(false);
 
       // Reset form
@@ -163,7 +180,9 @@ export function RoomSettingsModal({
                 min="2"
                 max="100"
                 value={maxParticipants}
-                onChange={(e) => setMaxParticipants(parseInt(e.target.value) || 2)}
+                onChange={(e) =>
+                  setMaxParticipants(parseInt(e.target.value) || 2)
+                }
               />
               <p className="text-xs text-muted-foreground">
                 Between 2 and 100 participants
@@ -197,7 +216,8 @@ export function RoomSettingsModal({
                       Password Protected
                     </h4>
                     <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                      This room is currently password protected. Users need the password to join.
+                      This room is currently password protected. Users need the
+                      password to join.
                     </p>
                     <Button
                       variant="outline"
@@ -222,7 +242,8 @@ export function RoomSettingsModal({
                       Remove Password Protection
                     </h4>
                     <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                      The room password will be removed. Anyone with the room code can join.
+                      The room password will be removed. Anyone with the room
+                      code can join.
                     </p>
                     <Button
                       variant="outline"
@@ -262,7 +283,8 @@ export function RoomSettingsModal({
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Setting a password will make the room private and require the password to join.
+                  Setting a password will make the room private and require the
+                  password to join.
                 </p>
               </div>
             )}
@@ -270,7 +292,9 @@ export function RoomSettingsModal({
             {currentSettings.hasPassword && !removePassword && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="updatePassword">Update Password (Optional)</Label>
+                  <Label htmlFor="updatePassword">
+                    Update Password (Optional)
+                  </Label>
                   <Input
                     id="updatePassword"
                     type="password"
@@ -281,7 +305,9 @@ export function RoomSettingsModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmUpdatePassword">Confirm New Password</Label>
+                  <Label htmlFor="confirmUpdatePassword">
+                    Confirm New Password
+                  </Label>
                   <Input
                     id="confirmUpdatePassword"
                     type="password"

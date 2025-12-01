@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useOptimistic } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { RoomModal } from "@/components/RoomModal";
@@ -11,6 +11,13 @@ import { Plus, Loader2, FolderOpen } from "lucide-react";
 import { Room, RoomFilter } from "@/types/room.types";
 import { roomModalTabs } from "./helper";
 import { fetchRooms } from "./api";
+import { useSocket } from "@/hooks/useSocket";
+import {
+  RoomDeletedPayload,
+  RoomSettingsUpdatedPayload,
+  ParticipantJoinedPayload,
+  ParticipantLeftPayload,
+} from "@/types/socket.types";
 
 export default function RoomsPage() {
   const { data: session, status } = useSession();
@@ -19,17 +26,126 @@ export default function RoomsPage() {
   const [filter, setFilter] = useState<RoomFilter>("all");
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
 
+  // Socket for real-time updates
+  const { socket, on, off } = useSocket();
+
+  // Optimistic updates for instant UI feedback
+  type OptimisticAction =
+    | { type: "add"; payload: Room }
+    | { type: "remove"; payload: string }
+    | { type: "update"; payload: { id: string; updates: Partial<Room> } };
+
+  const [optimisticRooms, updateOptimisticRooms] = useOptimistic(
+    rooms,
+    (state: Room[], action: OptimisticAction) => {
+      switch (action.type) {
+        case "add":
+          return [action.payload, ...state];
+        case "remove":
+          return state.filter((room) => room._id !== action.payload);
+        case "update":
+          return state.map((room) =>
+            room._id === action.payload.id
+              ? { ...room, ...action.payload.updates }
+              : room
+          );
+        default:
+          return state;
+      }
+    }
+  );
+
   useEffect(() => {
     if (status === "unauthenticated") {
       redirect("/login");
     }
   }, [status]);
 
+  // Fetch rooms on mount and filter change
   useEffect(() => {
     if (status === "authenticated") {
       fetchRooms({ setIsLoading, setRooms, filter });
     }
   }, [status, filter]);
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    // Room deleted
+    const handleRoomDeleted = (payload: RoomDeletedPayload) => {
+      console.log("[RoomsPage] Room deleted:", payload.roomId);
+      setRooms((prev) => prev.filter((room) => room._id !== payload.roomId));
+    };
+
+    // Room settings updated
+    const handleSettingsUpdated = (payload: RoomSettingsUpdatedPayload) => {
+      console.log("[RoomsPage] Room settings updated:", payload.roomId);
+      setRooms((prev) =>
+        prev.map((room) =>
+          room._id === payload.roomId
+            ? {
+                ...room,
+                name: payload.updates.name ?? room.name,
+                description: payload.updates.description ?? room.description,
+                maxParticipants:
+                  payload.updates.maxParticipants ?? room.maxParticipants,
+                isPrivate: payload.updates.isPrivate ?? room.isPrivate,
+                lastActivity: new Date(),
+              }
+            : room
+        )
+      );
+    };
+
+    // Participant joined - refetch to get updated participant list
+    const handleParticipantJoined = (payload: ParticipantJoinedPayload) => {
+      console.log("[RoomsPage] Participant joined:", payload.roomId);
+      // Refetch to get accurate participant data
+      fetchRooms({ setIsLoading, setRooms, filter });
+    };
+
+    // Participant left - refetch to get updated participant list
+    const handleParticipantLeft = (payload: ParticipantLeftPayload) => {
+      console.log("[RoomsPage] Participant left:", payload.roomId);
+      // Refetch to get accurate participant data
+      fetchRooms({ setIsLoading, setRooms, filter });
+    };
+
+    on("room:deleted", handleRoomDeleted);
+    on("room:settings_updated", handleSettingsUpdated);
+    on("participant:joined", handleParticipantJoined);
+    on("participant:left", handleParticipantLeft);
+
+    return () => {
+      off("room:deleted", handleRoomDeleted);
+      off("room:settings_updated", handleSettingsUpdated);
+      off("participant:joined", handleParticipantJoined);
+      off("participant:left", handleParticipantLeft);
+    };
+  }, [socket, filter, on, off]);
+
+  const handleRoomCreated = (room: Room) => {
+    updateOptimisticRooms({ type: "add", payload: room });
+    setTimeout(() => {
+      fetchRooms({ setIsLoading, setRooms, filter });
+    }, 300);
+  };
+
+  const handleRoomJoined = (room: Room) => {
+    updateOptimisticRooms({ type: "add", payload: room });
+    setTimeout(() => {
+      fetchRooms({ setIsLoading, setRooms, filter });
+    }, 300);
+  };
+
+  const handleRoomDeleted = (roomId: string) => {
+    updateOptimisticRooms({ type: "remove", payload: roomId });
+  };
+
+  const handleRoomLeft = (roomId: string) => {
+    updateOptimisticRooms({ type: "remove", payload: roomId });
+  };
 
   if (status === "loading") {
     return (
@@ -79,7 +195,7 @@ export default function RoomsPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : rooms.length === 0 ? (
+      ) : optimisticRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="rounded-full bg-muted p-6 mb-4">
             <FolderOpen className="h-12 w-12 text-muted-foreground" />
@@ -99,13 +215,13 @@ export default function RoomsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {rooms.map((room) => (
+          {optimisticRooms.map((room) => (
             <RoomCard
               key={room._id}
               room={room}
               currentUserId={session.user._id}
-              onDelete={() => fetchRooms({ setIsLoading, setRooms, filter })}
-              onLeave={() => fetchRooms({ setIsLoading, setRooms, filter })}
+              onDelete={handleRoomDeleted}
+              onLeave={handleRoomLeft}
             />
           ))}
         </div>
@@ -116,7 +232,8 @@ export default function RoomsPage() {
         <RoomModal
           isOpen={isRoomModalOpen}
           onClose={() => setIsRoomModalOpen(false)}
-          onSuccess={() => fetchRooms({ setIsLoading, setRooms, filter })}
+          onRoomCreated={handleRoomCreated}
+          onRoomJoined={handleRoomJoined}
         />
       )}
     </div>
