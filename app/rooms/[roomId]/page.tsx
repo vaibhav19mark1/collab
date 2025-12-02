@@ -46,6 +46,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RoomSettingsModal } from "@/components/RoomSettingsModal";
 import { InviteModal } from "@/components/InviteModal";
 import RoomChat from "@/components/RoomChat";
+import { DocumentTab } from "@/components/DocumentsTab";
 import { useUIStore } from "@/stores/uiStore";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import type {
@@ -874,146 +875,20 @@ export default function RoomDetailsPage() {
         </Card>
       )}
 
-      {/* Pending Invites Section - Only visible to owner/admin */}
-      {/* {canManage && (
-        <Card className="mt-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Invite Links</CardTitle>
-                <CardDescription>
-                  Manage pending invitation links for this room
-                </CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowInvites(!showInvites)}
-              >
-                {showInvites ? "Hide" : "Show"}
-              </Button>
-            </div>
-          </CardHeader>
-          {showInvites && (
-            <CardContent>
-              {invites.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Link className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No active invites</p>
-                  <p className="text-sm">
-                    Generate an invite link to share with others
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {invites
-                    .filter(
-                      (invite) =>
-                        invite.status === "pending" &&
-                        new Date(invite.expiresAt) > new Date()
-                    )
-                    .map((invite) => {
-                      const isLoadingThis = actionLoading === invite._id;
-                      const expiresIn = Math.ceil(
-                        (new Date(invite.expiresAt).getTime() -
-                          new Date().getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      );
-
-                      return (
-                        <div
-                          key={invite._id}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white font-semibold">
-                              <Link className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">
-                                Created by {invite.inviterUsername}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Expires in {expiresIn} day
-                                {expiresIn !== 1 ? "s" : ""} •{" "}
-                                {new Date(
-                                  invite.createdAt
-                                ).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyInviteLink(invite.token)}
-                            >
-                              <Copy className="h-4 w-4 mr-1" />
-                              Copy
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRevokeInvite(invite._id)}
-                              disabled={isLoadingThis}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              {isLoadingThis ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <X className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  {invites.filter(
-                    (invite) =>
-                      invite.status === "pending" &&
-                      new Date(invite.expiresAt) > new Date()
-                  ).length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>All invites have expired</p>
-                      <p className="text-sm">
-                        Generate a new invite link to share
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          )}
-        </Card>
-      )} */}
-
-      {/* Collaboration Tools Placeholder */}
+      {/* Collaborative Documents */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Collaboration Tools</CardTitle>
+          <CardTitle>Collaborative Documents</CardTitle>
           <CardDescription>
-            Real-time collaboration features coming soon
+            Create and edit documents together in real-time
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-6 border rounded-lg text-center opacity-50">
-              <Settings className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-medium">Text Editor</p>
-              <p className="text-sm text-muted-foreground">Coming Soon</p>
-            </div>
-            <div className="p-6 border rounded-lg text-center opacity-50">
-              <Settings className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-medium">Code Editor</p>
-              <p className="text-sm text-muted-foreground">Coming Soon</p>
-            </div>
-            <div className="p-6 border rounded-lg text-center opacity-50">
-              <Settings className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-medium">Whiteboard</p>
-              <p className="text-sm text-muted-foreground">Coming Soon</p>
-            </div>
-          </div>
+          <DocumentTab
+            roomId={roomId}
+            userId={session.user._id}
+            username={session.user.username as string}
+          />
         </CardContent>
       </Card>
 

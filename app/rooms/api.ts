@@ -4,17 +4,13 @@ import { Room } from "@/types/room.types";
 type FetchRoomsParams = {
   setIsLoading: (loading: boolean) => void;
   setRooms: (rooms: Room[]) => void;
-  filter: string;
 };
 
-const fetchRooms = async ({
-  setIsLoading,
-  setRooms,
-  filter,
-}: FetchRoomsParams) => {
+const fetchRooms = async ({ setIsLoading, setRooms }: FetchRoomsParams) => {
   setIsLoading(true);
   try {
-    const response = await axios.get(`/api/rooms?filter=${filter}`);
+    // Fetch all rooms - filtering will be done locally
+    const response = await axios.get(`/api/rooms?filter=all`);
     const data = response.data;
     setRooms(data.rooms || []);
   } catch (error) {

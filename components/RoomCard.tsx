@@ -47,7 +47,7 @@ export function RoomCard({
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   const isOwner = room.owner === currentUserId;
-  const participantCount = room.participants.length;
+  const participantCount = room.participants?.length || 1;
 
   const handleCopyCode = async () => {
     await navigator.clipboard.writeText(room.roomCode);

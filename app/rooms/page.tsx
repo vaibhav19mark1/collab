@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useOptimistic } from "react";
+import {
+  useEffect,
+  useState,
+  useOptimistic,
+  useMemo,
+  startTransition,
+} from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { RoomModal } from "@/components/RoomModal";
@@ -18,13 +24,16 @@ import {
   ParticipantJoinedPayload,
   ParticipantLeftPayload,
 } from "@/types/socket.types";
+import { useRoomStore } from "@/stores/roomStore";
 
 export default function RoomsPage() {
   const { data: session, status } = useSession();
-  const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<RoomFilter>("all");
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+
+  // Get rooms from store
+  const { allRooms, setRooms } = useRoomStore();
 
   // Socket for real-time updates
   const { socket, on, off } = useSocket();
@@ -36,7 +45,7 @@ export default function RoomsPage() {
     | { type: "update"; payload: { id: string; updates: Partial<Room> } };
 
   const [optimisticRooms, updateOptimisticRooms] = useOptimistic(
-    rooms,
+    allRooms,
     (state: Room[], action: OptimisticAction) => {
       switch (action.type) {
         case "add":
@@ -55,18 +64,39 @@ export default function RoomsPage() {
     }
   );
 
+  // Filter rooms locally based on the selected tab
+  const filteredRooms = useMemo(() => {
+    if (!session?.user?._id) return [];
+
+    const userId = session.user._id;
+
+    switch (filter) {
+      case "owned":
+        return optimisticRooms.filter((room) => room.owner === userId);
+      case "joined":
+        return optimisticRooms.filter(
+          (room) =>
+            room.owner !== userId &&
+            room.participants?.some((p) => p.userId === userId)
+        );
+      case "all":
+      default:
+        return optimisticRooms;
+    }
+  }, [optimisticRooms, filter, session?.user?._id]);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       redirect("/login");
     }
   }, [status]);
 
-  // Fetch rooms on mount and filter change
+  // Fetch all rooms only once on mount
   useEffect(() => {
     if (status === "authenticated") {
-      fetchRooms({ setIsLoading, setRooms, filter });
+      fetchRooms({ setIsLoading, setRooms });
     }
-  }, [status, filter]);
+  }, [status, setRooms]);
 
   // Socket listeners for real-time updates
   useEffect(() => {
@@ -75,41 +105,72 @@ export default function RoomsPage() {
     // Room deleted
     const handleRoomDeleted = (payload: RoomDeletedPayload) => {
       console.log("[RoomsPage] Room deleted:", payload.roomId);
-      setRooms((prev) => prev.filter((room) => room._id !== payload.roomId));
+      startTransition(() => {
+        setRooms(allRooms.filter((room) => room._id !== payload.roomId));
+      });
     };
 
     // Room settings updated
     const handleSettingsUpdated = (payload: RoomSettingsUpdatedPayload) => {
       console.log("[RoomsPage] Room settings updated:", payload.roomId);
-      setRooms((prev) =>
-        prev.map((room) =>
-          room._id === payload.roomId
-            ? {
-                ...room,
-                name: payload.updates.name ?? room.name,
-                description: payload.updates.description ?? room.description,
-                maxParticipants:
-                  payload.updates.maxParticipants ?? room.maxParticipants,
-                isPrivate: payload.updates.isPrivate ?? room.isPrivate,
-                lastActivity: new Date(),
-              }
-            : room
-        )
-      );
+      startTransition(() => {
+        setRooms(
+          allRooms.map((room) =>
+            room._id === payload.roomId
+              ? {
+                  ...room,
+                  name: payload.updates.name ?? room.name,
+                  description: payload.updates.description ?? room.description,
+                  maxParticipants:
+                    payload.updates.maxParticipants ?? room.maxParticipants,
+                  isPrivate: payload.updates.isPrivate ?? room.isPrivate,
+                  lastActivity: new Date(),
+                }
+              : room
+          )
+        );
+      });
     };
 
-    // Participant joined - refetch to get updated participant list
+    // Participant joined - update participant list
     const handleParticipantJoined = (payload: ParticipantJoinedPayload) => {
       console.log("[RoomsPage] Participant joined:", payload.roomId);
-      // Refetch to get accurate participant data
-      fetchRooms({ setIsLoading, setRooms, filter });
+      startTransition(() => {
+        setRooms(
+          allRooms.map((room) =>
+            room._id === payload.roomId
+              ? {
+                  ...room,
+                  participants: [
+                    ...(room.participants || []),
+                    payload.participant,
+                  ],
+                  lastActivity: new Date(),
+                }
+              : room
+          )
+        );
+      });
     };
 
-    // Participant left - refetch to get updated participant list
+    // Participant left - update participant list
     const handleParticipantLeft = (payload: ParticipantLeftPayload) => {
       console.log("[RoomsPage] Participant left:", payload.roomId);
-      // Refetch to get accurate participant data
-      fetchRooms({ setIsLoading, setRooms, filter });
+      startTransition(() => {
+        setRooms(
+          allRooms.map((room) =>
+            room._id === payload.roomId
+              ? {
+                  ...room,
+                  participants: (room.participants || []).filter(
+                    (p) => p.userId !== payload.userId
+                  ),
+                  lastActivity: new Date(),
+                }
+              : room
+          )
+        );
+      });
     };
 
     on("room:deleted", handleRoomDeleted);
@@ -123,28 +184,42 @@ export default function RoomsPage() {
       off("participant:joined", handleParticipantJoined);
       off("participant:left", handleParticipantLeft);
     };
-  }, [socket, filter, on, off]);
+  }, [socket, allRooms, on, off, setRooms]);
 
   const handleRoomCreated = (room: Room) => {
     updateOptimisticRooms({ type: "add", payload: room });
+    // Update the store with the new room
     setTimeout(() => {
-      fetchRooms({ setIsLoading, setRooms, filter });
+      startTransition(() => {
+        setRooms([room, ...allRooms]);
+      });
     }, 300);
   };
 
   const handleRoomJoined = (room: Room) => {
     updateOptimisticRooms({ type: "add", payload: room });
+    // Update the store with the joined room
     setTimeout(() => {
-      fetchRooms({ setIsLoading, setRooms, filter });
+      startTransition(() => {
+        setRooms([room, ...allRooms]);
+      });
     }, 300);
   };
 
   const handleRoomDeleted = (roomId: string) => {
     updateOptimisticRooms({ type: "remove", payload: roomId });
+    // Update the store
+    startTransition(() => {
+      setRooms(allRooms.filter((room) => room._id !== roomId));
+    });
   };
 
   const handleRoomLeft = (roomId: string) => {
     updateOptimisticRooms({ type: "remove", payload: roomId });
+    // Update the store
+    startTransition(() => {
+      setRooms(allRooms.filter((room) => room._id !== roomId));
+    });
   };
 
   if (status === "loading") {
@@ -195,7 +270,7 @@ export default function RoomsPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : optimisticRooms.length === 0 ? (
+      ) : filteredRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="rounded-full bg-muted p-6 mb-4">
             <FolderOpen className="h-12 w-12 text-muted-foreground" />
@@ -215,7 +290,7 @@ export default function RoomsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {optimisticRooms.map((room) => (
+          {filteredRooms.map((room) => (
             <RoomCard
               key={room._id}
               room={room}
