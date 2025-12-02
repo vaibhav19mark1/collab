@@ -40,7 +40,6 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",
-    "lib0": "^0.2.114",
     "lucide-react": "^0.454.0",
     "mongodb": "^6.10.0",
     "mongoose": "^8.8.4",
