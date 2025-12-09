@@ -1,0 +1,174 @@
+import { Editor } from "@tiptap/react";
+import { WebsocketProvider } from "y-websocket";
+import { PanelLeft, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Participant as RoomParticipant } from "@/types/room.types";
+
+interface Participant extends RoomParticipant {
+  color?: string;
+}
+
+interface EditorHeaderProps {
+  editor: Editor | null;
+  provider: WebsocketProvider | null;
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  isConnected: boolean;
+  documentTitle: string;
+  roomId: string;
+  participants?: Participant[];
+}
+
+export const EditorHeader = ({
+  editor,
+  provider,
+  isSidebarOpen,
+  toggleSidebar,
+  isConnected,
+  documentTitle,
+  roomId,
+  participants = [],
+}: EditorHeaderProps) => {
+  const [activeUserIds, setActiveUserIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!provider) return;
+
+    const updateActiveUsers = () => {
+      const states = provider.awareness.getStates();
+      const active = new Set<string>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      states.forEach((state: any) => {
+        if (state.user?.id) {
+          active.add(state.user.id);
+        }
+      });
+      setActiveUserIds(active);
+    };
+
+    updateActiveUsers();
+    provider.awareness.on("change", updateActiveUsers);
+
+    return () => {
+      provider.awareness.off("change", updateActiveUsers);
+    };
+  }, [provider]);
+
+  if (!editor) return null;
+
+  const wordCount = editor.storage.characterCount.words();
+  const charCount = editor.storage.characterCount.characters();
+
+  // Filter participants to show only active ones or all? Requirement says "participants avatars overlapped (at most 3 then)".
+  // Usually we show all room participants, highlighting active ones.
+  // Let's show up to 3 participants, prioritizing active ones if possible, or just the list.
+  const displayParticipants = participants.slice(0, 3);
+  const remainingParticipants = Math.max(0, participants.length - 3);
+
+  return (
+    <div className="h-16 border-b flex items-center justify-between px-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="flex items-center gap-4">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className={isSidebarOpen ? "bg-muted" : ""}
+              >
+                <PanelLeft className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Toggle Sidebar</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <div className="flex flex-col">
+          <h1 className="text-sm font-semibold truncate max-w-[200px] sm:max-w-[300px]">
+            {documentTitle}
+          </h1>
+          <span className="text-xs text-muted-foreground">
+            {isConnected ? "Saved" : "Unsaved changes"}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-6">
+        <div className="hidden sm:flex flex-col items-end text-muted-foreground text-xs">
+          <span>{wordCount} words</span>
+          <span>{charCount} characters</span>
+        </div>
+
+        <div className="flex items-center gap-4 border-l pl-4 h-8">
+          <div className="flex -space-x-2">
+            {displayParticipants.map((participant) => {
+              const isActive = activeUserIds.has(participant.userId);
+              const initials = participant.username
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
+
+              return (
+                <TooltipProvider key={participant.userId}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background cursor-pointer transition-transform hover:z-10 hover:scale-110">
+                        <AvatarFallback
+                          className="text-white text-xs"
+                          style={{
+                            backgroundColor: participant.color || "#000",
+                          }}
+                        >
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {participant.username}
+                        {isActive && " (Active)"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+            {remainingParticipants > 0 && (
+              <div className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-medium z-10">
+                +{remainingParticipants}
+              </div>
+            )}
+          </div>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href={`/rooms/${roomId}`}>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Back to Room</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -43,4 +43,5 @@ next-env.d.ts
 info.txt
 
 # folders and files
-/plans
+/docs
+/legacy

@@ -35,7 +35,7 @@ const YjsProvider = ({
     );
 
     wsProvider.awareness.setLocalStateField("user", {
-      userId: config.userId,
+      id: config.userId,
       name: config.username,
       color: config.userColor,
     });

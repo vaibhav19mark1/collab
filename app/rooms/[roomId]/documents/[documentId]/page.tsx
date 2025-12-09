@@ -2,101 +2,94 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { YjsProvider } from "@/contexts/YjsContext";
-import CollaborativeEditor from "@/components/editor/CollaborativeEditor";
+import { CollaborativeEditor } from "@/components/editor/CollaborativeEditor";
 import { toast } from "sonner";
+import { Participant } from "@/types/room.types";
 
 interface Document {
-  _id: string;
+  id: string;
   title: string;
-  type: string;
+  content: Record<string, unknown>;
   roomId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function DocumentPage() {
-  const { data: session, status } = useSession();
   const params = useParams();
   const router = useRouter();
   const roomId = params.roomId as string;
   const documentId = params.documentId as string;
 
   const [document, setDocument] = useState<Document | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<{
+    id: string;
+    name: string;
+    color: string;
+  } | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    const fetchDocument = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(
+        // Fetch document
+        const docResponse = await axios.get(
           `/api/rooms/${roomId}/document/${documentId}`
         );
-        if (response.data.success) {
-          setDocument(response.data.document);
-        }
+        setDocument(docResponse.data.document);
+        setUser(docResponse.data.user);
+
+        // Fetch room participants
+        const roomResponse = await axios.get(`/api/rooms/${roomId}`);
+        setParticipants(roomResponse.data.room.participants || []);
       } catch (error) {
-        console.error("Error fetching document:", error);
-        toast.error("Failed to load document");
+        console.error("Error fetching data:", error);
+        toast.error("Failed to fetch document");
         router.push(`/rooms/${roomId}`);
       } finally {
         setLoading(false);
       }
     };
 
-    if (session?.user) {
-      fetchDocument();
+    if (roomId && documentId) {
+      fetchData();
     }
-  }, [roomId, documentId, session, router]);
+  }, [roomId, documentId, router]);
 
-  if (status === "loading" || loading) {
+  if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (!document || !session?.user) {
+  if (!document || !user) {
     return null;
   }
 
-  const userColor = `#${session.user._id.slice(0, 6)}`;
-
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="border-b px-4 py-3 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push(`/rooms/${roomId}`)}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Room
-        </Button>
-        <div className="h-6 w-px bg-border" />
-        <h1 className="font-semibold text-lg">{document.title}</h1>
-      </div>
-
-      {/* Editor Area */}
-      <div className="flex-1 overflow-hidden p-4 md:p-8 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-hidden">
         <YjsProvider
           config={{
-            roomId: documentId, // Use document ID as the Yjs room ID
-            userId: session.user._id,
-            username: session.user.username as string,
-            userColor,
+            roomId: documentId, // Use documentId as the Yjs room ID for isolation
+            userId: user.id,
+            username: user.name,
+            userColor: user.color,
           }}
         >
-          <CollaborativeEditor className="h-full min-h-[calc(100vh-8rem)]" />
+          {/* <></> */}
+          <CollaborativeEditor
+            editable={true}
+            documentTitle={document.title}
+            roomId={roomId}
+            participants={participants}
+          />
         </YjsProvider>
       </div>
     </div>
