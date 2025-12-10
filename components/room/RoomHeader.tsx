@@ -49,7 +49,7 @@ const ConnectionStatus = ({ status }: ConnectionStatusProps) => {
     connected: "bg-green-500",
     connecting: "bg-yellow-500",
     disconnected: "bg-red-500",
-    reconnecting: "bg-orange-500",
+    reconnecting: "bg-blue-500",
   };
 
   const statusLabels = {

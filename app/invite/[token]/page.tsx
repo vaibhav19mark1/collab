@@ -110,7 +110,7 @@ export default function InviteAcceptPage() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-orange-500" />
+            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-500" />
             <p className="text-muted-foreground">Validating invite...</p>
           </CardContent>
         </Card>
@@ -165,7 +165,7 @@ export default function InviteAcceptPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-full mx-auto mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-full mx-auto mb-4">
             <Users className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-2xl">You&apos;re Invited!</CardTitle>
@@ -232,7 +232,7 @@ export default function InviteAcceptPage() {
             <Button
               onClick={handleAcceptInvite}
               disabled={isAccepting}
-              className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+              className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium"
             >
               {isAccepting ? (
                 <>
@@ -257,8 +257,8 @@ export default function InviteAcceptPage() {
 
           {status !== "authenticated" && (
             <p className="text-xs text-center text-muted-foreground">
-              You&apos;ll be redirected to sign in and then automatically join the
-              room
+              You&apos;ll be redirected to sign in and then automatically join
+              the room
             </p>
           )}
         </CardContent>

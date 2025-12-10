@@ -21,7 +21,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -42,7 +42,7 @@ export default function Dashboard() {
             <Card className="shadow-xl border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-orange-500" />
+                  <User className="h-5 w-5 text-blue-500" />
                   User Profile
                 </CardTitle>
               </CardHeader>
@@ -80,7 +80,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
-                  className="w-full justify-start bg-orange-500 hover:bg-orange-600"
+                  className="w-full justify-start bg-blue-500 hover:bg-blue-600"
                   onClick={() => router.push("/rooms")}
                 >
                   My Rooms

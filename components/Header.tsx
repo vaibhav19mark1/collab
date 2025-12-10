@@ -20,7 +20,7 @@ export function Header() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="inline-flex items-center justify-center w-8 h-8 bg-orange-500 rounded-full">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
               <span className="text-white font-bold text-sm">C</span>
             </div>
             <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">

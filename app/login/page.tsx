@@ -188,7 +188,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-500 rounded-full mb-3">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full mb-3">
             <span className="text-white font-bold text-xl">C</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -224,7 +224,7 @@ export default function AuthPage() {
                       value={formData.username}
                       onChange={handleChange}
                       placeholder="Choose a username"
-                      className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+                      className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -248,7 +248,7 @@ export default function AuthPage() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email"
-                    className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+                    className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -271,7 +271,7 @@ export default function AuthPage() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
-                    className="pl-10 pr-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+                    className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                   />
                   <button
                     type="button"
@@ -299,7 +299,7 @@ export default function AuthPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg text-base"
+                className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg text-base"
               >
                 {isLoading
                   ? isSigningUp
@@ -362,7 +362,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={handleToggleMode}
-                className="font-medium text-orange-600 hover:text-orange-500 underline ml-1"
+                className="font-medium text-blue-600 hover:text-blue-500 underline ml-1"
               >
                 {isSigningUp ? "Sign in" : "Sign up"}
               </button>
