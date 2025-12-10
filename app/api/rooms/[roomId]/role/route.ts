@@ -89,6 +89,7 @@ export async function PATCH(
       newRole: role,
       changedBy: session.user._id as string,
       changedByUsername: session.user.username as string,
+      performedBy: session.user._id as string,
     });
 
     return NextResponse.json({

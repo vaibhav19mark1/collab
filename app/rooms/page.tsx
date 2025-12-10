@@ -13,7 +13,7 @@ import { RoomModal } from "@/components/RoomModal";
 import { RoomCard } from "@/components/RoomCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Loader2, FolderOpen } from "lucide-react";
+import { Plus, Loader2, PackageOpen } from "lucide-react";
 import { Room, RoomFilter } from "@/types/room.types";
 import { roomModalTabs } from "./helper";
 import { fetchRooms } from "./api";
@@ -187,7 +187,9 @@ export default function RoomsPage() {
   }, [socket, allRooms, on, off, setRooms]);
 
   const handleRoomCreated = (room: Room) => {
-    updateOptimisticRooms({ type: "add", payload: room });
+    startTransition(() => {
+      updateOptimisticRooms({ type: "add", payload: room });
+    });
     // Update the store with the new room
     setTimeout(() => {
       startTransition(() => {
@@ -197,7 +199,9 @@ export default function RoomsPage() {
   };
 
   const handleRoomJoined = (room: Room) => {
-    updateOptimisticRooms({ type: "add", payload: room });
+    startTransition(() => {
+      updateOptimisticRooms({ type: "add", payload: room });
+    });
     // Update the store with the joined room
     setTimeout(() => {
       startTransition(() => {
@@ -207,7 +211,9 @@ export default function RoomsPage() {
   };
 
   const handleRoomDeleted = (roomId: string) => {
-    updateOptimisticRooms({ type: "remove", payload: roomId });
+    startTransition(() => {
+      updateOptimisticRooms({ type: "remove", payload: roomId });
+    });
     // Update the store
     startTransition(() => {
       setRooms(allRooms.filter((room) => room._id !== roomId));
@@ -215,7 +221,9 @@ export default function RoomsPage() {
   };
 
   const handleRoomLeft = (roomId: string) => {
-    updateOptimisticRooms({ type: "remove", payload: roomId });
+    startTransition(() => {
+      updateOptimisticRooms({ type: "remove", payload: roomId });
+    });
     // Update the store
     startTransition(() => {
       setRooms(allRooms.filter((room) => room._id !== roomId));
@@ -235,7 +243,7 @@ export default function RoomsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto p-4 max-w-7xl">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
         <div>
@@ -273,7 +281,7 @@ export default function RoomsPage() {
       ) : filteredRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="rounded-full bg-muted p-6 mb-4">
-            <FolderOpen className="h-12 w-12 text-muted-foreground" />
+            <PackageOpen className="h-12 w-12 text-muted-foreground" />
           </div>
           <h3 className="text-xl font-semibold mb-2">No rooms found</h3>
           <p className="text-muted-foreground mb-6 max-w-sm">

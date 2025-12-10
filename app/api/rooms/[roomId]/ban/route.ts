@@ -113,6 +113,7 @@ export async function POST(
       bannedBy: session.user._id as string,
       bannedByUsername: session.user.username as string,
       reason,
+      performedBy: session.user._id as string,
     });
 
     return NextResponse.json({

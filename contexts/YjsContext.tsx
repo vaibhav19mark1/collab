@@ -25,19 +25,18 @@ const YjsProvider = ({
   useEffect(() => {
     if (!config) return;
 
+    const { roomId, userId, username, userColor } = config;
+
     const yjsDoc = new YjsDoc();
     const wsUrl = process.env.NEXT_PUBLIC_YJS_URL || "ws://localhost:3002";
-    const wsProvider = new WebsocketProvider(
-      wsUrl,
-      `room:${config.roomId}`,
-      yjsDoc,
-      { connect: true }
-    );
+    const wsProvider = new WebsocketProvider(wsUrl, `room:${roomId}`, yjsDoc, {
+      connect: true,
+    });
 
     wsProvider.awareness.setLocalStateField("user", {
-      id: config.userId,
-      name: config.username,
-      color: config.userColor,
+      id: userId,
+      name: username,
+      color: userColor,
     });
 
     wsProvider.on("status", (event: { status: string }) => {
@@ -59,7 +58,7 @@ const YjsProvider = ({
       setIsConnected(false);
       setSynced(false);
     };
-  }, [config]);
+  }, [config?.roomId, config?.userId, config?.username, config?.userColor]);
 
   return (
     <YjsContext.Provider value={{ provider, doc, isConnected, synced }}>

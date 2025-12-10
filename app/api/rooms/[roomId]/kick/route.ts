@@ -95,6 +95,7 @@ export async function POST(
       kickedUsername,
       kickedBy: session.user._id as string,
       kickedByUsername: session.user.username as string,
+      performedBy: session.user._id as string,
     });
 
     return NextResponse.json({

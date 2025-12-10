@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import connectDB from "@/lib/db";
 import Document from "@/models/Document";
 import Room from "@/models/Room";
+import { generateColor } from "@/lib/helper";
 
 export async function GET(
   req: NextRequest,
@@ -36,30 +37,16 @@ export async function GET(
       );
     }
 
-    // Generate a consistent color for the user based on their ID
-    const generateColor = (id: string) => {
-      const colors = [
-        "#FF6B6B",
-        "#4ECDC4",
-        "#45B7D1",
-        "#FFA07A",
-        "#98D8C8",
-        "#F7DC6F",
-        "#BB8FCE",
-        "#85C1E2",
-        "#F8B739",
-        "#52B788",
-      ];
-      const hash = id
-        .split("")
-        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      return colors[hash % colors.length];
-    };
+    const participant = room.participants.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (p: any) => p.userId === session.user._id
+    );
 
     const user = {
       id: session.user._id,
       name: session.user.name || "Anonymous",
-      color: generateColor(session.user._id),
+      color:
+        participant?.color || generateColor(session.user.name || "Anonymous"),
     };
 
     return NextResponse.json({ success: true, document, user });

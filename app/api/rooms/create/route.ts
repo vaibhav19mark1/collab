@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
 import bcrypt from "bcryptjs";
+import { generateColor } from "@/lib/helper";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +20,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { name, description, isPrivate, password, maxParticipants } = body;
-    
+
     console.log("Session user:", session.user);
     console.log("User ID:", session.user._id);
     console.log("Username:", session.user.username);
-    
+
     // Validate user ID
     const userId = session.user._id || session.user.id;
     if (!userId) {
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Validation
     if (!name || name.trim().length < 3) {
       return NextResponse.json(
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
           username: session.user.username || "Unknown",
           role: "owner",
           joinedAt: new Date(),
+          color: generateColor(session.user.username || "Unknown"),
         },
       ],
     });

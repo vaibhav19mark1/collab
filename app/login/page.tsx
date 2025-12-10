@@ -184,7 +184,7 @@ export default function AuthPage() {
   const toggleShowPassword = () => setShowPassword((prev) => !prev);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4 py-6 -mt-16">
+    <div className="min-h-screen flex items-center justify-center p-4 py-6 -mt-16">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">

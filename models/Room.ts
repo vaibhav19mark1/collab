@@ -40,6 +40,9 @@ const participantSchema = new Schema<Participant>(
       type: Date,
       default: Date.now,
     },
+    color: {
+      type: String,
+    },
   },
   { _id: false }
 );

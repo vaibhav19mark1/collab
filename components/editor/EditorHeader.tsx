@@ -66,10 +66,6 @@ export const EditorHeader = ({
 
   const wordCount = editor.storage.characterCount.words();
   const charCount = editor.storage.characterCount.characters();
-
-  // Filter participants to show only active ones or all? Requirement says "participants avatars overlapped (at most 3 then)".
-  // Usually we show all room participants, highlighting active ones.
-  // Let's show up to 3 participants, prioritizing active ones if possible, or just the list.
   const displayParticipants = participants.slice(0, 3);
   const remainingParticipants = Math.max(0, participants.length - 3);
 

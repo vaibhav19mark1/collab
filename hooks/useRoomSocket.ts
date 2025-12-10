@@ -112,6 +112,11 @@ export const useRoomSocket = ({
         );
         onParticipantKicked?.(payload);
       } else if (showKickBan && !mute) {
+        // Don't show toast if we performed the action (API already showed success toast)
+        if (payload.performedBy === userId) {
+          onParticipantKicked?.(payload);
+          return;
+        }
         toast.warning(
           `${payload.kickedUsername} was kicked by ${payload.kickedByUsername}`,
           { duration: 3000 }
@@ -136,6 +141,11 @@ export const useRoomSocket = ({
         );
         onParticipantBanned?.(payload);
       } else if (showKickBan && !mute) {
+        // Don't show toast if we performed the action (API already showed success toast)
+        if (payload.performedBy === userId) {
+          onParticipantBanned?.(payload);
+          return;
+        }
         toast.warning(
           `${payload.bannedUsername} was banned by ${payload.bannedByUsername}`,
           { duration: 3000 }
@@ -153,6 +163,12 @@ export const useRoomSocket = ({
     if (!socket) return;
 
     const handleParticipantUnbanned = (payload: ParticipantUnbannedPayload) => {
+      // Don't show toast if we performed the action (API already showed success toast)
+      if (payload.performedBy === userId) {
+        onParticipantUnbanned?.(payload);
+        return;
+      }
+
       if (!mute) {
         toast.info(
           `${payload.unbannedUsername} was unbanned by ${payload.unbannedByUsername}`,
@@ -179,6 +195,11 @@ export const useRoomSocket = ({
           }
         );
       } else if (!mute) {
+        // Don't show toast if we performed the action (API already showed success toast)
+        if (payload.performedBy === userId) {
+          onRoleChanged?.(payload);
+          return;
+        }
         toast.info(
           `${payload.username}'s role changed from ${payload.oldRole} to ${payload.newRole}`,
           { duration: 3000 }
@@ -219,6 +240,12 @@ export const useRoomSocket = ({
     if (!socket) return;
 
     const handleRoomDeleted = (payload: RoomDeletedPayload) => {
+      // Don't show toast if we performed the action (API already showed success toast)
+      if (payload.performedBy === userId) {
+        onRoomDeleted?.(payload);
+        return;
+      }
+
       toast.error(`This room was deleted by ${payload.deletedByUsername}`, {
         duration: 5000,
       });

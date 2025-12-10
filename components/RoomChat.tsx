@@ -207,7 +207,7 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
                     className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-white shadow-sm ${
                       isOwnMessage
                         ? "bg-primary"
-                        : "bg-gradient-to-br from-blue-500 to-purple-500"
+                        : "bg-blue-500"
                     }`}
                   >
                     {msg.username.charAt(0).toUpperCase()}

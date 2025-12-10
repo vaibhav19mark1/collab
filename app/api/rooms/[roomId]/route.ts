@@ -36,6 +36,7 @@ export async function GET(
         username: string;
         role: string;
         joinedAt: Date;
+        color?: string;
       }>;
       lastActivity: Date;
       createdAt: Date;
@@ -64,7 +65,6 @@ export async function GET(
         { status: 403 }
       );
     }
-
     return NextResponse.json({
       success: true,
       room: {
@@ -81,6 +81,7 @@ export async function GET(
           username: p.username,
           role: p.role,
           joinedAt: p.joinedAt,
+          color: p.color,
         })),
         lastActivity: room.lastActivity,
         createdAt: room.createdAt,
@@ -135,6 +136,7 @@ export async function DELETE(
       roomId: room._id.toString(),
       deletedBy: session.user._id as string,
       deletedByUsername: session.user.username as string,
+      performedBy: session.user._id as string,
     });
 
     // Soft delete - set isActive to false

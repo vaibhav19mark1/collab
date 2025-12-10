@@ -77,6 +77,7 @@ export async function POST(
       unbannedUsername: unBannedUser?.username,
       unbannedBy: session.user._id as string,
       unbannedByUsername: session.user.username as string,
+      performedBy: session.user._id as string,
     });
 
     return NextResponse.json({

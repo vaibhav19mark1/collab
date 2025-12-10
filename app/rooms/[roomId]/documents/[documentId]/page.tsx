@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
@@ -49,7 +49,9 @@ export default function DocumentPage() {
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to fetch document");
-        router.push(`/rooms/${roomId}`);
+        startTransition(() => {
+          router.push(`/rooms/${roomId}`);
+        });
       } finally {
         setLoading(false);
       }
@@ -60,6 +62,21 @@ export default function DocumentPage() {
     }
   }, [roomId, documentId, router]);
 
+  // Memoize config to prevent provider recreation
+  // Must be before conditional returns to follow Rules of Hooks
+  const yjsConfig = useMemo(
+    () =>
+      user && documentId
+        ? {
+            roomId: documentId,
+            userId: user.id,
+            username: user.name,
+            userColor: user.color,
+          }
+        : null,
+    [documentId, user?.id, user?.name, user?.color]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -68,21 +85,14 @@ export default function DocumentPage() {
     );
   }
 
-  if (!document || !user) {
+  if (!document || !user || !yjsConfig) {
     return null;
   }
 
   return (
     <div className="flex flex-col h-screen bg-background">
       <div className="flex-1 overflow-hidden">
-        <YjsProvider
-          config={{
-            roomId: documentId, // Use documentId as the Yjs room ID for isolation
-            userId: user.id,
-            username: user.name,
-            userColor: user.color,
-          }}
-        >
+        <YjsProvider config={yjsConfig}>
           {/* <></> */}
           <CollaborativeEditor
             editable={true}

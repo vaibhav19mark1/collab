@@ -16,12 +16,8 @@ export const EditorLayout = ({
 }: EditorLayoutProps) => {
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Header */}
       <div className="flex-none z-50">{header}</div>
-
-      {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Sidebar */}
         <div
           className={cn(
             "flex-none border-r bg-muted/10 transition-all duration-300 ease-in-out overflow-y-auto",
@@ -30,8 +26,6 @@ export const EditorLayout = ({
         >
           {sidebar}
         </div>
-
-        {/* Editor Area */}
         <div className="flex-1 overflow-y-auto relative bg-background scroll-smooth">
           {children}
         </div>

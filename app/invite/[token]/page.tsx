@@ -107,7 +107,7 @@ export default function InviteAcceptPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
             <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-orange-500" />
@@ -120,7 +120,7 @@ export default function InviteAcceptPage() {
 
   if (error && !inviteData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
             <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
@@ -137,7 +137,7 @@ export default function InviteAcceptPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
@@ -162,7 +162,7 @@ export default function InviteAcceptPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-full mx-auto mb-4">

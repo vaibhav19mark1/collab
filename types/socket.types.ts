@@ -5,6 +5,7 @@ interface ParticipantJoinedPayload {
     username: string;
     role: "owner" | "admin" | "member";
     joinedAt: Date;
+    color: string;
   };
 }
 
@@ -20,6 +21,7 @@ interface ParticipantKickedPayload {
   kickedUsername: string;
   kickedBy: string;
   kickedByUsername: string;
+  performedBy?: string; // ID of the user who performed the action
 }
 
 interface ParticipantBannedPayload {
@@ -29,6 +31,7 @@ interface ParticipantBannedPayload {
   bannedBy: string;
   bannedByUsername: string;
   reason?: string;
+  performedBy?: string; // ID of the user who performed the action
 }
 
 interface ParticipantUnbannedPayload {
@@ -37,6 +40,7 @@ interface ParticipantUnbannedPayload {
   unbannedUsername: string;
   unbannedBy: string;
   unbannedByUsername: string;
+  performedBy?: string; // ID of the user who performed the action
 }
 
 interface ParticipantRoleChangedPayload {
@@ -47,6 +51,7 @@ interface ParticipantRoleChangedPayload {
   newRole: "owner" | "admin" | "member";
   changedBy: string;
   changedByUsername: string;
+  performedBy?: string; // ID of the user who performed the action
 }
 
 interface RoomSettingsUpdatedPayload {
@@ -66,6 +71,7 @@ interface RoomDeletedPayload {
   roomId: string;
   deletedBy: string;
   deletedByUsername: string;
+  performedBy?: string; // ID of the user who performed the action
 }
 
 interface ChatMessagePayload {
@@ -99,7 +105,10 @@ interface ServerToClientEvents {
 }
 
 interface ClientToServerEvents {
-  "room:join": (roomId: string, userData?: { userId: string; username: string }) => void;
+  "room:join": (
+    roomId: string,
+    userData?: { userId: string; username: string }
+  ) => void;
   "room:leave": (roomId: string) => void;
   "chat:send_message": (payload: { roomId: string; message: string }) => void;
   "chat:typing": (payload: { roomId: string; isTyping: boolean }) => void;

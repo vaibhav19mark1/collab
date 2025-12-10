@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db";
 import Room from "@/models/Room";
 import bcrypt from "bcryptjs";
 import { socketEmitter } from "@/lib/socket-emitter";
+import { generateColor } from "@/lib/helper";
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,12 +93,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Assign color
+    const userColor = generateColor(session.user.username as string);
+
     // Add user to participants
     room.participants.push({
       userId: session.user._id as string,
       username: session.user.username as string,
       role: "member",
       joinedAt: new Date(),
+      color: userColor,
     });
 
     await room.save();
@@ -109,6 +114,7 @@ export async function POST(request: NextRequest) {
         username: session.user.username as string,
         role: "member",
         joinedAt: new Date(),
+        color: userColor,
       },
     });
 

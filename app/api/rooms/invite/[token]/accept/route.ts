@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import Invite from "@/models/Invite";
 import Room from "@/models/Room";
+import { generateColor } from "@/lib/helper";
 
 export async function POST(
   request: NextRequest,
@@ -87,12 +88,16 @@ export async function POST(
       );
     }
 
+    // Assign color
+    const userColor = generateColor(session.user.username || "Unknown");
+
     // Add user to room
     room.participants.push({
       userId: session.user._id,
       username: session.user.username,
       role: "member",
       joinedAt: new Date(),
+      color: userColor,
     });
 
     await room.save();

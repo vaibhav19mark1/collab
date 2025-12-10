@@ -1,12 +1,5 @@
 export type ParticipantRole = "owner" | "admin" | "member";
 
-export interface Participant {
-  userId: string;
-  username: string;
-  role: ParticipantRole;
-  joinedAt: Date;
-}
-
 export interface BannedUser {
   userId: string;
   username: string;
@@ -15,12 +8,12 @@ export interface BannedUser {
   reason?: string;
 }
 
-// client side types
 export interface Participant {
   userId: string;
   username: string;
   role: ParticipantRole;
   joinedAt: Date;
+  color?: string;
 }
 
 export interface Room {
