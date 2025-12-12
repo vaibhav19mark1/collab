@@ -91,7 +91,7 @@ export const EditorHeader = ({
         </TooltipProvider>
 
         <div className="flex flex-col">
-          <h1 className="text-sm font-semibold truncate max-w-[200px] sm:max-w-[300px]">
+          <h1 className="text-sm font-semibold truncate max-w-50 sm:max-w-75">
             {documentTitle}
           </h1>
           <span className="text-xs text-muted-foreground">

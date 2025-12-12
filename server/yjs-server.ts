@@ -1,12 +1,32 @@
+import { config } from "dotenv";
+import { resolve } from "path";
+config({ path: resolve(__dirname, "../.env") });
+
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { MongodbPersistence } from "y-mongodb-provider";
 import * as Y from "yjs";
 import * as encoding from "lib0/encoding";
 import * as decoding from "lib0/decoding";
 import * as syncProtocol from "y-protocols/sync";
 import * as awarenessProtocol from "y-protocols/awareness";
 
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/collab";
 const YJS_PORT = process.env.YJS_PORT || 3002;
+
+// Persistence instance
+let persistence: MongodbPersistence | null = null;
+try {
+  persistence = new MongodbPersistence(MONGODB_URI, {
+    collectionName: "yjs-documents",
+    flushSize: 100,
+    multipleCollections: false,
+  });
+  console.log("[YJS] MongoDB Persistence initialized");
+} catch (error) {
+  console.error("[YJS] Failed to initialize MongoDB Persistence:", error);
+}
 
 /**
  * Yjs Protocol Message Types
@@ -27,6 +47,11 @@ class DocumentHandler {
   awareness: awarenessProtocol.Awareness;
   clients: Set<WebSocket>;
 
+  private updateBuffer: Uint8Array[] = [];
+  private debounceTimer: NodeJS.Timeout | null = null;
+  private readonly DEBOUNCE_WAIT = 2000;
+  private readonly MAX_BATCH_SIZE = 50;
+
   constructor(name: string) {
     this.name = name;
     // Create a new Yjs document
@@ -35,9 +60,26 @@ class DocumentHandler {
     this.awareness = new awarenessProtocol.Awareness(this.doc);
     this.clients = new Set();
 
+    // Load persisted data if available
+    this.loadDocument();
+
     // LISTENER 1: Handle Document Updates
     // When the document content changes (someone types), broadcast the update to everyone else
-    this.doc.on("update", (update: Uint8Array) => {
+    this.doc.on("update", async (update: Uint8Array) => {
+      // Save updates to MongoDB
+      this.updateBuffer.push(update);
+
+      // debounced update
+      if (this.updateBuffer.length >= this.MAX_BATCH_SIZE) {
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        this.flushUpdates();
+      } else {
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+          this.flushUpdates();
+        }, this.DEBOUNCE_WAIT);
+      }
+
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, MESSAGE_SYNC);
       syncProtocol.writeUpdate(encoder, update);
@@ -62,6 +104,36 @@ class DocumentHandler {
     });
   }
 
+  async flushUpdates() {
+    if (!persistence || this.updateBuffer.length === 0) return;
+
+    const updatesToSave = this.updateBuffer;
+    this.updateBuffer = [];
+    this.debounceTimer = null;
+
+    try {
+      const mergedUpdates = Y.mergeUpdates(updatesToSave);
+      await persistence.storeUpdate(this.name, mergedUpdates);
+      console.log(
+        `[YJS] Flushed ${updatesToSave.length} updates to DB for ${this.name}`
+      );
+    } catch (error) {
+      console.error(`[YJS] Error flushing updates for ${this.name}:`, error);
+    }
+  }
+
+  async loadDocument() {
+    if (!persistence) return;
+    try {
+      const persistedYdoc = await persistence.getYDoc(this.name);
+      const newUpdates = Y.encodeStateAsUpdate(persistedYdoc);
+      Y.applyUpdate(this.doc, newUpdates);
+      console.log(`[YJS] Loaded document content for: ${this.name}`);
+    } catch (error) {
+      console.error(`[YJS] Error loading document ${this.name}:`, error);
+    }
+  }
+
   /**
    * Broadcast a message to connected clients.
    * @param message The binary message to send
@@ -77,7 +149,7 @@ class DocumentHandler {
 }
 
 // Global map to store active documents in memory
-// Key: Document Name (e.g., "room:123"), Value: DocumentHandler
+// Key: Document Name (e.g., "document:123"), Value: DocumentHandler
 const documents = new Map<string, DocumentHandler>();
 
 /**
@@ -97,7 +169,7 @@ const wss = new WebSocketServer({ server });
 
 wss.on("connection", (conn, req) => {
   // 1. Parse the URL to get the document name
-  // Example: ws://localhost:3002/room:my-document-id
+  // Example: ws://localhost:3002/document:my-document-id
   const url = new URL(req.url || "", `http://${req.headers.host}`);
   const docName = url.pathname.slice(1); // Remove leading slash
 

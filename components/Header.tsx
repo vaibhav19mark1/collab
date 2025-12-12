@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, LayoutDashboard, Users } from "lucide-react";
+// import Image from "next/image";
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -20,6 +21,7 @@ export function Header() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-2">
+            {/* <Image src={"/logo-light.png"} alt="Collab Logo" width={"100"} height={100} /> */}
             <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
               <span className="text-white font-bold text-sm">C</span>
             </div>

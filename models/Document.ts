@@ -14,9 +14,9 @@ const documentSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["richtext", "code", "whiteboard"],
+      enum: ["editor", "code", "whiteboard"],
       required: true,
-      default: "richtext",
+      default: "editor",
     },
     createdBy: {
       type: String,

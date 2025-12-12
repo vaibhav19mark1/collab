@@ -26,23 +26,18 @@ import {
 } from "@/types/socket.types";
 import { useRoomStore } from "@/stores/roomStore";
 
+type OptimisticAction =
+  | { type: "add"; payload: Room }
+  | { type: "remove"; payload: string }
+  | { type: "update"; payload: { id: string; updates: Partial<Room> } };
+
 export default function RoomsPage() {
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<RoomFilter>("all");
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
-
-  // Get rooms from store
   const { allRooms, setRooms } = useRoomStore();
-
-  // Socket for real-time updates
   const { socket, on, off } = useSocket();
-
-  // Optimistic updates for instant UI feedback
-  type OptimisticAction =
-    | { type: "add"; payload: Room }
-    | { type: "remove"; payload: string }
-    | { type: "update"; payload: { id: string; updates: Partial<Room> } };
 
   const [optimisticRooms, updateOptimisticRooms] = useOptimistic(
     allRooms,
@@ -64,7 +59,6 @@ export default function RoomsPage() {
     }
   );
 
-  // Filter rooms locally based on the selected tab
   const filteredRooms = useMemo(() => {
     if (!session?.user?._id) return [];
 
@@ -91,18 +85,15 @@ export default function RoomsPage() {
     }
   }, [status]);
 
-  // Fetch all rooms only once on mount
   useEffect(() => {
     if (status === "authenticated") {
       fetchRooms({ setIsLoading, setRooms });
     }
   }, [status, setRooms]);
 
-  // Socket listeners for real-time updates
   useEffect(() => {
     if (!socket) return;
 
-    // Room deleted
     const handleRoomDeleted = (payload: RoomDeletedPayload) => {
       console.log("[RoomsPage] Room deleted:", payload.roomId);
       startTransition(() => {
@@ -110,7 +101,6 @@ export default function RoomsPage() {
       });
     };
 
-    // Room settings updated
     const handleSettingsUpdated = (payload: RoomSettingsUpdatedPayload) => {
       console.log("[RoomsPage] Room settings updated:", payload.roomId);
       startTransition(() => {
@@ -132,7 +122,6 @@ export default function RoomsPage() {
       });
     };
 
-    // Participant joined - update participant list
     const handleParticipantJoined = (payload: ParticipantJoinedPayload) => {
       console.log("[RoomsPage] Participant joined:", payload.roomId);
       startTransition(() => {
@@ -153,7 +142,6 @@ export default function RoomsPage() {
       });
     };
 
-    // Participant left - update participant list
     const handleParticipantLeft = (payload: ParticipantLeftPayload) => {
       console.log("[RoomsPage] Participant left:", payload.roomId);
       startTransition(() => {
@@ -190,7 +178,6 @@ export default function RoomsPage() {
     startTransition(() => {
       updateOptimisticRooms({ type: "add", payload: room });
     });
-    // Update the store with the new room
     setTimeout(() => {
       startTransition(() => {
         setRooms([room, ...allRooms]);
@@ -202,7 +189,6 @@ export default function RoomsPage() {
     startTransition(() => {
       updateOptimisticRooms({ type: "add", payload: room });
     });
-    // Update the store with the joined room
     setTimeout(() => {
       startTransition(() => {
         setRooms([room, ...allRooms]);
@@ -214,7 +200,6 @@ export default function RoomsPage() {
     startTransition(() => {
       updateOptimisticRooms({ type: "remove", payload: roomId });
     });
-    // Update the store
     startTransition(() => {
       setRooms(allRooms.filter((room) => room._id !== roomId));
     });
@@ -224,7 +209,6 @@ export default function RoomsPage() {
     startTransition(() => {
       updateOptimisticRooms({ type: "remove", payload: roomId });
     });
-    // Update the store
     startTransition(() => {
       setRooms(allRooms.filter((room) => room._id !== roomId));
     });

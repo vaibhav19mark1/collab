@@ -149,6 +149,16 @@ export const Editor = ({
         provider: provider,
         user: getUserInfo(),
         render: (user: { name: string; color: string }) => {
+          // Check if this cursor belongs to the current user (by matching name)
+          // Ideally we would match by ID, but name is what we have readily available in this scope
+          // and "ghost" cursors usually have the same name.
+          const currentUser = getUserInfo();
+          if (user.name === currentUser.name) {
+            const hiddenSpan = document.createElement("span");
+            hiddenSpan.style.display = "none";
+            return hiddenSpan;
+          }
+
           const cursor = document.createElement("span");
           cursor.classList.add("collaboration-cursor__caret");
           cursor.setAttribute("style", `border-color: ${user.color}`);

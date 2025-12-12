@@ -39,7 +39,7 @@ export default function Dashboard() {
         <div className="px-4 py-6 sm:px-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* User Profile Card */}
-            <Card className="shadow-xl border-0">
+            <Card className="shadow-sm border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5 text-blue-500" />
@@ -51,7 +51,7 @@ export default function Dashboard() {
                   <label className="text-sm font-medium text-gray-500">
                     Name
                   </label>
-                  <p className="text-lg text-gray-900">{session.user?.name}</p>
+                  <p className="text-lg text-gray900">{session.user?.name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">
@@ -74,7 +74,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="shadow-xl border-0">
+            <Card className="shadow-sm border">
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
@@ -99,14 +99,11 @@ export default function Dashboard() {
                 >
                   Join Room
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Recent Activity
-                </Button>
               </CardContent>
             </Card>
 
             {/* Platform Features */}
-            <Card className="shadow-xl border-0">
+            {/* <Card className="shadow-xl border-0">
               <CardHeader>
                 <CardTitle>Platform Features</CardTitle>
               </CardHeader>
@@ -136,7 +133,7 @@ export default function Dashboard() {
                   </span>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </main>

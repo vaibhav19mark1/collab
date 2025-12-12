@@ -9,7 +9,7 @@ import { Room } from "@/types/room.types";
 import { toast } from "sonner";
 import { RoomSettingsModal } from "@/components/RoomSettingsModal";
 import RoomChat from "@/components/RoomChat";
-import { DocumentTab } from "@/components/DocumentsTab";
+import { Documents } from "@/components/room/document/Documents";
 import { useUIStore } from "@/stores/uiStore";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { useRoomStateUpdates } from "@/hooks/useRoomStateUpdates";
@@ -17,13 +17,6 @@ import { RoomHeader } from "@/components/room/RoomHeader";
 import { RoomInfoCard } from "@/components/room/RoomInfoCard";
 import { ParticipantsCard } from "@/components/room/ParticipantsCard";
 import { BannedUsersCard } from "@/components/room/BannedUsersCard";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import type {
   RoomDeletedPayload,
   ParticipantKickedPayload,
@@ -68,6 +61,7 @@ export default function RoomDetailsPage() {
   } = room || {};
 
   // Custom hook for optimistic state updates
+
   const {
     handleParticipantJoined,
     handleParticipantLeft,
@@ -98,6 +92,7 @@ export default function RoomDetailsPage() {
   }, [roomId, router]);
 
   // Initial fetch and active room setup
+
   useEffect(() => {
     if (status === "authenticated" && roomId) {
       fetchRoom();
@@ -213,7 +208,7 @@ export default function RoomDetailsPage() {
   const canManage = isOwner || isAdmin;
 
   return (
-    <div className="container mx-auto p-4 max-w-5xl">
+    <div className="container mx-auto px-4 py-8">
       <RoomHeader
         roomId={roomId}
         room={room}
@@ -246,21 +241,11 @@ export default function RoomDetailsPage() {
       )}
 
       {/* Collaborative Documents */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Collaborative Documents</CardTitle>
-          <CardDescription>
-            Create and edit documents together in real-time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DocumentTab
-            roomId={roomId}
-            userId={session.user._id}
-            username={session.user.username as string}
-          />
-        </CardContent>
-      </Card>
+      <Documents
+        roomId={roomId}
+        userId={session.user._id}
+        username={session.user.username as string}
+      />
 
       {/* Room Settings Modal */}
       {room && canManage && showSettingsDialog && (
@@ -276,7 +261,6 @@ export default function RoomDetailsPage() {
             maxParticipants,
           }}
           onSettingsUpdated={(updates) => {
-            // Optimistically update room state without refetching
             setRoom((prev) => {
               if (!prev) return prev;
               return {

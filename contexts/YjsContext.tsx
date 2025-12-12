@@ -25,13 +25,19 @@ const YjsProvider = ({
   useEffect(() => {
     if (!config) return;
 
-    const { roomId, userId, username, userColor } = config;
+    const { documentId, userId, username, userColor } = config;
 
     const yjsDoc = new YjsDoc();
     const wsUrl = process.env.NEXT_PUBLIC_YJS_URL || "ws://localhost:3002";
-    const wsProvider = new WebsocketProvider(wsUrl, `room:${roomId}`, yjsDoc, {
-      connect: true,
-    });
+    const wsProvider = new WebsocketProvider(
+      wsUrl,
+      `document:${documentId}`,
+      yjsDoc,
+      {
+        connect: true,
+        maxBackoffTime: 2500, // Maximum wait time between retries (2.5s)
+      }
+    );
 
     wsProvider.awareness.setLocalStateField("user", {
       id: userId,
@@ -53,12 +59,13 @@ const YjsProvider = ({
     setProvider(wsProvider);
 
     return () => {
+      wsProvider.disconnect();
       wsProvider.destroy();
       yjsDoc.destroy();
       setIsConnected(false);
       setSynced(false);
     };
-  }, [config?.roomId, config?.userId, config?.username, config?.userColor]);
+  }, [config?.documentId, config?.userId, config?.username, config?.userColor]);
 
   return (
     <YjsContext.Provider value={{ provider, doc, isConnected, synced }}>

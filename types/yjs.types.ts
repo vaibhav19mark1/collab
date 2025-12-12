@@ -1,7 +1,7 @@
 import { Doc as YjsDoc } from "yjs";
 
 export interface YjsProviderConfig {
-  roomId: string;
+  documentId: string;
   userId: string;
   username: string;
   userColor: string;

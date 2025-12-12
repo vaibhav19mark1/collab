@@ -68,7 +68,7 @@ export default function DocumentPage() {
     () =>
       user && documentId
         ? {
-            roomId: documentId,
+            documentId,
             userId: user.id,
             username: user.name,
             userColor: user.color,

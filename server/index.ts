@@ -1,5 +1,7 @@
 import { config } from "dotenv";
-config();
+import { resolve } from "path";
+
+config({ path: resolve(__dirname, "../.env") });
 
 import "./socket";
 
