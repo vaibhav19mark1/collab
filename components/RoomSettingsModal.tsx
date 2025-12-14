@@ -208,14 +208,14 @@ export function RoomSettingsModal({
 
           <TabsContent value="security" className="space-y-4 pt-4">
             {currentSettings.hasPassword && !removePassword && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
                 <div className="flex items-start gap-3">
-                  <Lock className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <Lock className="h-5 w-5 text-primary mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                    <h4 className="font-medium text-foreground">
                       Password Protected
                     </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       This room is currently password protected. Users need the
                       password to join.
                     </p>
@@ -234,14 +234,14 @@ export function RoomSettingsModal({
             )}
 
             {removePassword && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+              <div className="rounded-lg border border-secondary bg-secondary/50 p-4">
                 <div className="flex items-start gap-3">
-                  <Unlock className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <Unlock className="h-5 w-5 text-secondary-foreground mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-medium text-amber-900 dark:text-amber-100">
+                    <h4 className="font-medium text-foreground">
                       Remove Password Protection
                     </h4>
-                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       The room password will be removed. Anyone with the room
                       code can join.
                     </p>

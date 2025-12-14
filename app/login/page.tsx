@@ -180,42 +180,43 @@ export default function AuthPage() {
       password: "",
     });
   };
-
   const toggleShowPassword = () => setShowPassword((prev) => !prev);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 py-6 -mt-16">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full mb-3">
-            <span className="text-white font-bold text-xl">C</span>
+          <div className="inline-flex items-center justify-center mb-3">
+            <Image
+              src="/logo-light-nobg.png"
+              alt="Collab Logo"
+              width={200}
+              height={100}
+            />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             {isSigningUp ? "Join Our Community" : "Let's Start Learning"}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {isSigningUp
               ? "Create your account to get started"
               : "Please login or sign up to continue"}
           </p>
         </div>
 
-        {/* Sign Up/Login Form */}
-        <Card className="shadow-xl border-0">
+        <Card className="shadow-xl border py-4">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Username - Only show for signup */}
               {isSigningUp && (
                 <div className="space-y-2">
                   <Label
                     htmlFor="username"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-sm font-medium text-foreground"
                   >
                     Username
                   </Label>
                   <div className="relative">
-                    <UserCheck className="absolute left-3 top-4 h-4 w-4 text-gray-400" />
+                    <UserCheck className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="username"
                       name="username"
@@ -224,22 +225,21 @@ export default function AuthPage() {
                       value={formData.username}
                       onChange={handleChange}
                       placeholder="Choose a username"
-                      className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="pl-10 h-12 border-input focus:border-primary focus:ring-ring"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Email */}
               <div className="space-y-2">
                 <Label
                   htmlFor="email"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Your Email
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-4 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     name="email"
@@ -248,21 +248,20 @@ export default function AuthPage() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email"
-                    className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="pl-10 h-12 border-input focus:border-primary focus:ring-ring"
                   />
                 </div>
               </div>
 
-              {/* Password */}
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Your Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-4 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     name="password"
@@ -271,12 +270,12 @@ export default function AuthPage() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
-                    className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="pl-10 pr-10 h-12 border-input focus:border-primary focus:ring-ring"
                   />
                   <button
                     type="button"
                     onClick={toggleShowPassword}
-                    className="absolute right-3 top-4 h-4 w-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="absolute cursor-pointer right-3 top-4 h-4 w-4 text-muted-foreground hover:text-foreground focus:outline-none"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -288,18 +287,16 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              {/* Error Message */}
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-destructive/15 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
                   {error}
                 </div>
               )}
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg text-base"
+                className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg text-base"
               >
                 {isLoading
                   ? isSigningUp
@@ -310,24 +307,24 @@ export default function AuthPage() {
                   : "Sign In"}
               </Button>
 
-              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-200" />
+                  <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">or</span>
+                  <span className="px-2 bg-background text-muted-foreground">
+                    or
+                  </span>
                 </div>
               </div>
 
-              {/* Google Sign In */}
               <div className="grid grid-cols-1 gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
-                  className="col-span-1 h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-base"
+                  className="col-span-1 h-12 border-input hover:bg-accent text-foreground font-medium rounded-lg text-base"
                 >
                   <Image
                     src="/google.svg"
@@ -338,31 +335,16 @@ export default function AuthPage() {
                   />
                   Sign in with Google
                 </Button>
-                {/* Github login - to be implemented  */}
-                {/* <Button
-                  type="button"
-                  variant="outline"
-                  className="col-span-1 h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-lg text-base"
-                >
-                  <Image
-                    src="/github.svg"
-                    alt="GitHub Logo"
-                    width={20}
-                    height={20}
-                    className="mr-2"
-                  />
-                  GitHub
-                </Button> */}
               </div>
             </form>
-            <p className="text-center text-sm text-gray-600 w-full mt-4">
+            <p className="text-center text-sm text-muted-foreground w-full mt-4">
               {isSigningUp
                 ? "Already have an account?"
                 : "Don't have an account?"}
               <button
                 type="button"
                 onClick={handleToggleMode}
-                className="font-medium text-blue-600 hover:text-blue-500 underline ml-1"
+                className="font-medium text-primary hover:text-primary/90 underline ml-1"
               >
                 {isSigningUp ? "Sign in" : "Sign up"}
               </button>

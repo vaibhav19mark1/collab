@@ -1,139 +1,97 @@
 "use client";
 
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ArrowRight, Plus, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [status]);
+  }, [status, router]);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
-  if (!session) {
-    return null;
-  }
+  if (!session) return null;
 
   return (
-    <div className="min-h-screen">
-      {/* Main Content */}
-      <main className="mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* User Profile Card */}
-            <Card className="shadow-sm border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-500" />
-                  User Profile
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Name
-                  </label>
-                  <p className="text-lg text-gray900">{session.user?.name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Username
-                  </label>
-                  <p className="text-lg text-gray-900">
-                    @{session.user?.username || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Email
-                  </label>
-                  <p className="text-lg text-gray-900 flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    {session.user?.email}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="min-h-full bg-background/50">
+      <main className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold text-primary">
+              {greeting}, {session.user?.name?.split(" ")[0]}!
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Ready to collaborate and create something amazing today?
+            </p>
+          </div>
+        </div>
 
-            {/* Quick Actions */}
-            <Card className="shadow-sm border">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  className="w-full justify-start bg-blue-500 hover:bg-blue-600"
-                  onClick={() => router.push("/rooms")}
-                >
-                  My Rooms
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => router.push("/rooms")}
-                >
-                  Create New Room
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => router.push("/rooms")}
-                >
-                  Join Room
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card
+                className="group relative overflow-hidden cursor-pointer hover:shadow-md transition-all border-primary/20 hover:border-primary/50"
+                onClick={() => router.push("/rooms")}
+              >
+                <CardHeader>
+                  <div className="p-3 bg-primary/10 w-fit rounded-lg mb-2 group-hover:scale-110 transition-transform duration-300">
+                    <Plus className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Create Room</CardTitle>
+                  <CardDescription>
+                    Start a new collaborative session
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-primary font-medium mt-2">
+                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Platform Features */}
-            {/* <Card className="shadow-xl border-0">
-              <CardHeader>
-                <CardTitle>Platform Features</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm">Text Editor</span>
-                  <span className="text-xs text-green-600 font-medium">
-                    Coming Soon
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm">Code Editor</span>
-                  <span className="text-xs text-green-600 font-medium">
-                    Coming Soon
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm">Whiteboard</span>
-                  <span className="text-xs text-green-600 font-medium">
-                    Coming Soon
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm">Real-time Chat</span>
-                  <span className="text-xs text-green-600 font-medium">
-                    Coming Soon
-                  </span>
-                </div>
-              </CardContent>
-            </Card> */}
+              <Card
+                className="group relative overflow-hidden cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+                onClick={() => router.push("/rooms")}
+              >
+                <CardHeader>
+                  <div className="p-3 bg-primary/10 w-fit rounded-lg mb-2 group-hover:scale-110 transition-transform duration-300">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Join Room</CardTitle>
+                  <CardDescription>Enter an existing room code</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-primary font-medium mt-2">
+                    Browse Rooms <ArrowRight className="ml-2 h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>

@@ -107,10 +107,10 @@ export default function InviteAcceptPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="h-full flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-500" />
+            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
             <p className="text-muted-foreground">Validating invite...</p>
           </CardContent>
         </Card>
@@ -120,10 +120,10 @@ export default function InviteAcceptPage() {
 
   if (error && !inviteData) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="h-full flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
-            <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <XCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
             <h2 className="text-2xl font-bold mb-2">Invalid Invite</h2>
             <p className="text-muted-foreground mb-6">{error}</p>
             <Button onClick={() => router.push("/rooms")} className="w-full">
@@ -137,7 +137,7 @@ export default function InviteAcceptPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="h-full flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
@@ -162,11 +162,11 @@ export default function InviteAcceptPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="h-full flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-full mx-auto mb-4">
-            <Users className="h-8 w-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mx-auto mb-4">
+            <Users className="h-8 w-8 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">You&apos;re Invited!</CardTitle>
           <CardDescription>
@@ -222,7 +222,7 @@ export default function InviteAcceptPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-destructive/15 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -232,7 +232,7 @@ export default function InviteAcceptPage() {
             <Button
               onClick={handleAcceptInvite}
               disabled={isAccepting}
-              className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
             >
               {isAccepting ? (
                 <>

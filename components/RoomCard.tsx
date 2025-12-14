@@ -124,7 +124,7 @@ export function RoomCard({
               </CardDescription>
             </div>
             {isOwner && (
-              <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-full text-xs font-medium">
+              <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
                 <Crown className="h-3 w-3" />
                 <span>Owner</span>
               </div>

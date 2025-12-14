@@ -78,11 +78,11 @@ export const ParticipantsCard = ({
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "owner":
-        return "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400";
+        return "bg-primary/10 text-primary";
       case "admin":
-        return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400";
+        return "bg-secondary text-secondary-foreground";
       default:
-        return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -189,7 +189,7 @@ export const ParticipantsCard = ({
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold"
+                    className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground font-semibold"
                     style={{ backgroundColor: avatarColor }}
                   >
                     {participant.username.charAt(0).toUpperCase()}

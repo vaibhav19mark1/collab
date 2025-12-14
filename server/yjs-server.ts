@@ -54,16 +54,14 @@ class DocumentHandler {
 
   constructor(name: string) {
     this.name = name;
-    // Create a new Yjs document
-    this.doc = new Y.Doc();
-    // Create awareness instance for this document (handles cursors/presence)
-    this.awareness = new awarenessProtocol.Awareness(this.doc);
+    this.doc = new Y.Doc(); // Create a new Yjs document
+    this.awareness = new awarenessProtocol.Awareness(this.doc); // Create awareness instance for this document (handles cursors/presence)
     this.clients = new Set();
 
     // Load persisted data if available
     this.loadDocument();
 
-    // LISTENER 1: Handle Document Updates
+    // listner 1: document listener
     // When the document content changes (someone types), broadcast the update to everyone else
     this.doc.on("update", async (update: Uint8Array) => {
       // Save updates to MongoDB
@@ -88,7 +86,7 @@ class DocumentHandler {
       this.broadcast(message, null); // Broadcast to all
     });
 
-    // LISTENER 2: Handle Awareness Updates
+    // listner 2: awareness listener
     // When cursors move or users join/leave, broadcast the change
     this.awareness.on("update", ({ added, updated, removed }: any) => {
       const changedClients = added.concat(updated).concat(removed);

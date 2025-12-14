@@ -61,7 +61,7 @@ export const BannedUsersCard = ({
                 className="flex items-center justify-between p-3 rounded-lg border border-destructive/20 bg-destructive/5"
               >
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold">
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center bg-destructive text-destructive-foreground font-semibold">
                     {bannedUser.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">

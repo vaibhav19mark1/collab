@@ -9,12 +9,26 @@ import {
   Trash2,
   LogOut,
   MessageSquare,
+  MoreVertical,
 } from "lucide-react";
 import { Room } from "@/types/room.types";
 import { startTransition } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ConnectionStatusProps {
   status: "connected" | "connecting" | "disconnected" | "reconnecting";
@@ -49,7 +63,7 @@ const ConnectionStatus = ({ status }: ConnectionStatusProps) => {
     connected: "bg-green-500",
     connecting: "bg-yellow-500",
     disconnected: "bg-red-500",
-    reconnecting: "bg-blue-500",
+    reconnecting: "bg-primary",
   };
 
   const statusLabels = {
@@ -140,69 +154,98 @@ export const RoomHeader = ({
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="-ml-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             <h1 className="text-3xl font-bold tracking-tight">{room.name}</h1>
             {isOwner && (
-              <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
                 <Crown className="h-4 w-4" />
                 <span>Owner</span>
               </div>
             )}
             <ConnectionStatus status={socketStatus} />
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground ml-10">
             {room.description || "No description provided"}
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onToggleChat}
-            title="Toggle Chat"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-          {canManage && (
-            <>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onSettings}
-                title="Room Settings"
-              >
-                <Settings className="h-4 w-4" />
+        <div className="flex gap-2 items-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={onToggleChat}>
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Chat</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {canManage && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    onClick={onGenerateInvite}
+                    disabled={isGeneratingInvite}
+                  >
+                    {isGeneratingInvite ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : copiedInvite ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Link className="h-4 w-4" />
+                    )}
+                    {/* {copiedInvite ? "Link Copied!" : "Copy Invite Link"} */}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Copy Invite Link</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </TooltipProvider>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
               </Button>
-              <Button
-                variant="outline"
-                onClick={onGenerateInvite}
-                disabled={isGeneratingInvite}
-              >
-                {isGeneratingInvite ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : copiedInvite ? (
-                  <Check className="mr-2 h-4 w-4" />
-                ) : (
-                  <Link className="mr-2 h-4 w-4" />
-                )}
-                {copiedInvite ? "Link Copied!" : "Copy Invite Link"}
-              </Button>
-            </>
-          )}
-          {isOwner ? (
-            <Button variant="destructive" onClick={onDelete}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Room
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={onLeave}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Leave Room
-            </Button>
-          )}
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canManage && (
+                <>
+                  <DropdownMenuItem onClick={onSettings}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {isOwner ? (
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete Room</span>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={onLeave}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Leave Room</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

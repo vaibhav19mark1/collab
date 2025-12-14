@@ -201,7 +201,7 @@ export const Documents = ({ roomId }: DocumentTabProps) => {
                     </div>
                   </Link>
 
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity has-[[data-state=open]]:opacity-100">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">

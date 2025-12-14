@@ -191,7 +191,7 @@ export default function RoomDetailsPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -200,6 +200,25 @@ export default function RoomDetailsPage() {
   if (!session || !room) {
     return null;
   }
+
+  const handleSettingsUpdate = (updates: {
+    name: string;
+    description?: string;
+    isPrivate: boolean;
+    maxParticipants: number;
+  }) => {
+    setRoom((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        name: updates.name,
+        description: updates.description || "",
+        isPrivate: updates.isPrivate,
+        maxParticipants: updates.maxParticipants,
+        lastActivity: new Date(),
+      };
+    });
+  };
 
   const isOwner = roomOwner === session.user._id;
   const { role: currentUserRole } =
@@ -260,19 +279,7 @@ export default function RoomDetailsPage() {
             hasPassword,
             maxParticipants,
           }}
-          onSettingsUpdated={(updates) => {
-            setRoom((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                name: updates.name,
-                description: updates.description,
-                isPrivate: updates.isPrivate,
-                maxParticipants: updates.maxParticipants,
-                lastActivity: new Date(),
-              };
-            });
-          }}
+          onSettingsUpdated={handleSettingsUpdate}
         />
       )}
 

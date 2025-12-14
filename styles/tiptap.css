@@ -1,5 +1,5 @@
 .tiptap {
-  @apply text-base leading-relaxed text-gray-800 dark:text-gray-200 outline-none;
+  @apply text-base leading-relaxed text-foreground outline-none;
 }
 
 .tiptap:focus {
@@ -11,22 +11,22 @@
 ----------------------------------------- */
 
 .tiptap h1 {
-  @apply text-4xl font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100;
+  @apply text-4xl font-bold mt-8 mb-4 text-foreground;
 }
 .tiptap h2 {
-  @apply text-3xl font-semibold mt-6 mb-3 text-gray-900 dark:text-gray-100;
+  @apply text-3xl font-semibold mt-6 mb-3 text-foreground;
 }
 .tiptap h3 {
-  @apply text-2xl font-semibold mt-5 mb-2 text-gray-900 dark:text-gray-200;
+  @apply text-2xl font-semibold mt-5 mb-2 text-foreground;
 }
 .tiptap h4 {
-  @apply text-xl font-medium mt-4 mb-2 text-gray-800 dark:text-gray-300;
+  @apply text-xl font-medium mt-4 mb-2 text-foreground;
 }
 .tiptap h5 {
-  @apply text-lg font-medium mt-3 mb-1 text-gray-700 dark:text-gray-400;
+  @apply text-lg font-medium mt-3 mb-1 text-muted-foreground;
 }
 .tiptap h6 {
-  @apply text-base font-medium mt-2 mb-1 text-gray-700 dark:text-gray-400;
+  @apply text-base font-medium mt-2 mb-1 text-muted-foreground;
 }
 
 /* -----------------------------------------
@@ -34,7 +34,7 @@
 ----------------------------------------- */
 
 .tiptap p {
-  @apply my-3 text-gray-800 dark:text-gray-200;
+  @apply my-3 text-foreground;
 }
 
 /* -----------------------------------------
@@ -42,7 +42,7 @@
 ----------------------------------------- */
 
 .tiptap a {
-  @apply text-blue-600 dark:text-blue-400 underline decoration-blue-400 dark:decoration-blue-500 hover:text-blue-800 dark:hover:text-blue-300;
+  @apply text-primary underline decoration-primary hover:text-primary/80;
 }
 
 /* -----------------------------------------
@@ -50,7 +50,7 @@
 ----------------------------------------- */
 
 .tiptap strong {
-  @apply font-semibold text-gray-900 dark:text-gray-100;
+  @apply font-semibold text-foreground;
 }
 
 .tiptap em {
@@ -58,11 +58,11 @@
 }
 
 .tiptap s {
-  @apply line-through text-gray-500 dark:text-gray-500;
+  @apply line-through text-muted-foreground;
 }
 
 .tiptap code {
-  @apply bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono text-red-600 dark:text-red-400;
+  @apply bg-muted px-1.5 py-0.5 rounded-md text-sm font-mono text-foreground border border-border;
 }
 
 /* -----------------------------------------
@@ -70,7 +70,7 @@
 ----------------------------------------- */
 
 .tiptap blockquote {
-  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic text-gray-700 dark:text-gray-300 my-4;
+  @apply border-l-4 border-border pl-4 italic text-muted-foreground my-4;
 }
 
 /* -----------------------------------------
@@ -78,7 +78,7 @@
 ----------------------------------------- */
 
 .tiptap hr {
-  @apply border-gray-300 dark:border-gray-700 my-6;
+  @apply border-border my-6;
 }
 
 /* -----------------------------------------
@@ -90,7 +90,7 @@
 }
 
 .tiptap ul li {
-  @apply my-1;
+  @apply my-1 text-foreground;
 }
 
 /* -----------------------------------------
@@ -102,7 +102,7 @@
 }
 
 .tiptap ol li {
-  @apply my-1;
+  @apply my-1 text-foreground;
 }
 
 /* -----------------------------------------
@@ -118,7 +118,7 @@
 }
 
 .tiptap ul[data-type="taskList"] input[type="checkbox"] {
-  @apply mt-1 w-4 h-4 rounded border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800;
+  @apply mt-1 w-4 h-4 rounded border-input bg-background text-primary focus:ring-ring;
 }
 
 /* -----------------------------------------
@@ -126,31 +126,26 @@
 ----------------------------------------- */
 
 .tiptap pre {
-  @apply p-4 rounded-lg overflow-auto my-4 font-mono text-sm;
-
-  /* Light mode */
-  @apply bg-gray-900 text-gray-100;
-
-  /* Dark mode theme */
-  @apply dark:bg-gray-800 dark:text-gray-100;
+  @apply p-4 rounded-lg overflow-x-auto my-4 font-mono text-sm border;
+  @apply bg-muted/50 border-border text-foreground;
 }
 
 .tiptap pre code {
-  @apply bg-transparent p-0 text-sm font-mono;
+  @apply bg-transparent p-0 text-inherit border-none;
 }
 
-/* Highlight.js style classes (optional) */
+/* Highlight.js style classes */
 .tiptap pre code .hljs-keyword {
-  @apply text-purple-400;
+  @apply text-primary font-bold;
 }
 .tiptap pre code .hljs-string {
-  @apply text-green-400;
+  @apply text-green-600 dark:text-green-400;
 }
 .tiptap pre code .hljs-number {
-  @apply text-blue-400;
+  @apply text-blue-600 dark:text-blue-400;
 }
 .tiptap pre code .hljs-comment {
-  @apply text-gray-500 italic dark:text-gray-500;
+  @apply text-muted-foreground italic;
 }
 
 /* -----------------------------------------
@@ -163,15 +158,15 @@
 
 .tiptap table th,
 .tiptap table td {
-  @apply border border-gray-300 dark:border-gray-700 p-2;
+  @apply border border-border p-2;
 }
 
 .tiptap table th {
-  @apply bg-gray-100 dark:bg-gray-900 font-semibold;
+  @apply bg-muted font-semibold text-foreground;
 }
 
 .tiptap table tr:nth-child(even) {
-  @apply bg-gray-50 dark:bg-gray-800;
+  @apply bg-muted/30;
 }
 
 /* -----------------------------------------
@@ -187,7 +182,7 @@
 ----------------------------------------- */
 
 .tiptap .ProseMirror-gapcursor {
-  @apply border-l border-blue-500 dark:border-blue-400;
+  @apply border-l border-primary;
 }
 
 /* -----------------------------------------
@@ -195,7 +190,7 @@
 ----------------------------------------- */
 
 .tiptap ::selection {
-  @apply bg-blue-200 dark:bg-blue-700;
+  @apply bg-primary/20;
 }
 
 /* -----------------------------------------
@@ -250,6 +245,5 @@
 ----------------------------------------- */
 
 .editor-container {
-  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 
-         rounded-lg shadow-sm p-6 overflow-auto;
+  @apply bg-background border border-border rounded-lg shadow-sm p-6 overflow-auto;
 }

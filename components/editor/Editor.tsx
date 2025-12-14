@@ -176,8 +176,7 @@ export const Editor = ({
     editable,
     editorProps: {
       attributes: {
-        class:
-          "tiptap prose dark:prose-invert max-w-none p-8 min-h-full focus:outline-none",
+        class: "tiptap p-8 min-h-full focus:outline-none",
       },
     },
   });

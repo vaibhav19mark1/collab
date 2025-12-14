@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Loader2, PackageOpen } from "lucide-react";
 import { Room, RoomFilter } from "@/types/room.types";
+import { RoomListSkeleton } from "@/components/skeletons/RoomListSkeleton";
 import { roomModalTabs } from "./helper";
 import { fetchRooms } from "./api";
 import { useSocket } from "@/hooks/useSocket";
@@ -216,7 +217,7 @@ export default function RoomsPage() {
 
   if (status === "loading") {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -259,9 +260,7 @@ export default function RoomsPage() {
 
       {/* Room List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <RoomListSkeleton />
       ) : filteredRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="rounded-full bg-muted p-6 mb-4">

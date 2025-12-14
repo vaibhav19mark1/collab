@@ -123,7 +123,7 @@ export const EditorHeader = ({
                     <TooltipTrigger asChild>
                       <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background cursor-pointer transition-transform hover:z-10 hover:scale-110">
                         <AvatarFallback
-                          className="text-white text-xs"
+                          className="text-primary-foreground text-xs"
                           style={{
                             backgroundColor: participant.color || "#000",
                           }}

@@ -11,6 +11,7 @@ import { useRoomChat } from "@/hooks/useRoomChat";
 import axios from "axios";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { ChatSkeleton } from "./skeletons/ChatSkeleton";
 
 type messageType = {
   messageId: string;
@@ -69,12 +70,13 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
   }, [roomId]);
 
   // Load message history on mount
+  // Load message history on mount or when room changes
   useEffect(() => {
-    if (chatOpen && roomId) {
+    if (roomId && chatOpen) {
       loadMessageHistory();
       resetUnread(roomId);
     }
-  }, [chatOpen, roomId, loadMessageHistory, resetUnread]);
+  }, [roomId, chatOpen, loadMessageHistory, resetUnread]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -152,10 +154,12 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
     }
   };
 
-  if (!chatOpen) return null;
-
   return (
-    <div className="fixed right-0 top-16 h-[calc(100vh-4rem)] w-80 sm:w-96 bg-background border-l border-border flex flex-col z-40 shadow-xl">
+    <div
+      className={`fixed right-0 top-16 h-[calc(100vh-4rem)] w-80 sm:w-96 bg-background border-l border-border flex flex-col z-40 shadow-xl transition-transform duration-300 ease-in-out ${
+        chatOpen ? "translate-x-0" : "translate-x-full"
+      }`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 backdrop-blur-sm">
         <div>
@@ -177,9 +181,7 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
         {isLoadingHistory ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <ChatSkeleton />
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full space-y-2 text-center opacity-50">
             <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
@@ -204,10 +206,8 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
                 {/* Avatar */}
                 <div className="flex-shrink-0">
                   <div
-                    className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-white shadow-sm ${
-                      isOwnMessage
-                        ? "bg-primary"
-                        : "bg-blue-500"
+                    className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-primary-foreground shadow-sm ${
+                      isOwnMessage ? "bg-primary" : "bg-primary"
                     }`}
                   >
                     {msg.username.charAt(0).toUpperCase()}
@@ -257,7 +257,7 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
                             <span className="text-[10px]">✓</span>
                           )}
                           {msg.status === "error" && (
-                            <span className="text-red-300">!</span>
+                            <span className="text-destructive">!</span>
                           )}
                         </span>
                       )}
