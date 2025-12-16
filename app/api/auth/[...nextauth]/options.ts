@@ -42,6 +42,7 @@ export const authOptions = {
             name?: string;
             password: string;
             isVerified?: boolean;
+            avatar?: string;
           } | null;
 
           // user not found
@@ -57,13 +58,10 @@ export const authOptions = {
           }
 
           console.log("Comparing passwords...");
-          const isPasswordValid = await bcrypt.compare(
-            password,
-            user.password
-          );
-          
+          const isPasswordValid = await bcrypt.compare(password, user.password);
+
           console.log("Password valid:", isPasswordValid);
-          
+
           if (!isPasswordValid) {
             throw new Error("Invalid password");
           }
@@ -76,6 +74,7 @@ export const authOptions = {
             email: user.email,
             username: user.username || "",
             name: user.name || user.username || "",
+            image: user.avatar,
             isVerified: user.isVerified ?? true,
           };
         } catch (error) {
@@ -103,12 +102,31 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user: NextAuthUser }) {
+    async jwt({
+      token,
+      user,
+      trigger,
+      session,
+    }: {
+      token: JWT;
+      user: NextAuthUser;
+      trigger?: "signIn" | "signUp" | "update";
+      session?: any;
+    }) {
       if (user) {
         token._id = user._id || user.id;
         token.username = user.username || user.email?.split("@")[0];
         token.isVerified = user.isVerified ?? true;
+        token.picture = user.image;
       }
+
+      if (trigger === "update" && session?.user) {
+        if (session.user.name) token.name = session.user.name;
+        if (session.user.image) token.picture = session.user.image;
+        if (session.user.username) token.username = session.user.username;
+        // Add other fields if necessary
+      }
+
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
@@ -116,10 +134,17 @@ export const authOptions = {
         session.user._id = token._id as string;
         session.user.username = token.username as string;
         session.user.isVerified = token.isVerified as boolean;
+        session.user.image = token.picture as string;
       }
       return session;
     },
-    async signIn({ user, account }: { user: NextAuthUser; account?: Account | null }) {
+    async signIn({
+      user,
+      account,
+    }: {
+      user: NextAuthUser;
+      account?: Account | null;
+    }) {
       try {
         // Allow all credential logins (handled by authorize function)
         if (account?.provider === "credentials") {
@@ -160,6 +185,7 @@ export const authOptions = {
               email: user.email,
               name: user.name || username,
               username: username,
+              avatar: user.image,
               googleId: account.providerAccountId,
               isVerified: true,
             });

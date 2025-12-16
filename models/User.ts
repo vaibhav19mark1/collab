@@ -37,7 +37,7 @@ const userSchema = new Schema<User>(
     },
     password: {
       type: String,
-      required: function(this: User) {
+      required: function (this: User) {
         // Password is required only if googleId is not present
         return !this.googleId;
       },
@@ -53,7 +53,7 @@ const userSchema = new Schema<User>(
     },
     avatar: {
       type: String,
-      default: "https://example.com/default-avatar.png",
+      default: "",
     },
   },
   {

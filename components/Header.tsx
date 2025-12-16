@@ -4,7 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { LayoutDashboard, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, User } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import {
@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -29,8 +30,13 @@ export function Header() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
 
-  // Don't show header on login page
-  if (pathname === "/login" || pathname === "/" || status !== "authenticated") {
+  // Don't show header on login page, or if unauthenticated, or if initial loading without session
+  if (
+    pathname === "/login" ||
+    pathname === "/" ||
+    status === "unauthenticated" ||
+    (status === "loading" && !session)
+  ) {
     return null;
   }
 
@@ -115,6 +121,14 @@ export function Header() {
               </TooltipProvider>
 
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => handleRedirect("/profile")}
+                  className="cursor-pointer"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => signOut({ callbackUrl: "/login" })}
                   className="text-destructive focus:text-destructive cursor-pointer"
