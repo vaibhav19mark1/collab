@@ -13,7 +13,7 @@ import {
   RoomDeletedPayload,
 } from "@/types/socket.types";
 
-const PORT = process.env.SOCKET_IO_PORT || 3001;
+const PORT = process.env.PORT || process.env.SOCKET_IO_PORT || 3001;
 
 // Helper for safe comparison
 const safeCompare = (a: string, b: string) => {

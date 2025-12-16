@@ -9,6 +9,8 @@
     "dev": "concurrently \"pnpm dev:next\" \"pnpm dev:socket\" \"pnpm dev:yjs\"",
     "build": "next build --turbopack",
     "start": "next start",
+    "start:socket": "tsx server/index.ts",
+    "start:yjs": "tsx server/yjs-server.ts",
     "start:servers": "concurrently \"tsx server/index.ts\" \"tsx server/yjs-server.ts\"",
     "lint": "eslint",
     "type-check": "tsc --noEmit"
@@ -90,7 +92,8 @@
     "y-protocols": "^1.0.6",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.27",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "tsx": "^4.20.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -105,7 +108,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
-    "tsx": "^4.20.6",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5"
   }

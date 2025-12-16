@@ -13,7 +13,7 @@ import * as awarenessProtocol from "y-protocols/awareness";
 
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/collab";
-const YJS_PORT = process.env.YJS_PORT || 3002;
+const YJS_PORT = process.env.PORT || process.env.YJS_PORT || 3002;
 
 // Persistence instance
 let persistence: MongodbPersistence | null = null;
