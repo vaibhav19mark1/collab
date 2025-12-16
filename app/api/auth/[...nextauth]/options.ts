@@ -111,7 +111,7 @@ export const authOptions = {
       token: JWT;
       user: NextAuthUser;
       trigger?: "signIn" | "signUp" | "update";
-      session?: any;
+      session?: { user?: { name?: string; image?: string; username?: string } };
     }) {
       if (user) {
         token._id = user._id || user.id;

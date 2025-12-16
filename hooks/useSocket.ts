@@ -25,6 +25,7 @@ export const useSocket = () => {
       handler: ServerToClientEvents[T]
     ) => {
       if (!socket) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       socket.on(event, handler as any);
     },
     [socket]
@@ -36,6 +37,7 @@ export const useSocket = () => {
       handler: ServerToClientEvents[T]
     ) => {
       if (!socket) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       socket.off(event, handler as any);
     },
     [socket]

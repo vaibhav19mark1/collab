@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,32 +30,39 @@ export function InviteModal({
   onInvitesSent,
 }: InviteModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Array<{_id: string; username: string; email: string}>>([]);
+  const [searchResults, setSearchResults] = useState<
+    Array<{ _id: string; username: string; email: string }>
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<Array<{_id: string; username: string; email: string}>>([]);
+  const [selectedUsers, setSelectedUsers] = useState<
+    Array<{ _id: string; username: string; email: string }>
+  >([]);
   const [customEmail, setCustomEmail] = useState("");
   const [inviteTab, setInviteTab] = useState<"users" | "email">("users");
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
 
-  const searchUsers = async (query: string) => {
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
+  const searchUsers = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 2) {
+        setSearchResults([]);
+        return;
+      }
 
-    setIsSearching(true);
-    try {
-      const response = await axios.get(`/api/users/search`, {
-        params: { q: query, roomId: roomId }
-      });
-      setSearchResults(response.data);
-    } catch (error) {
-      console.error("User search error:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+      setIsSearching(true);
+      try {
+        const response = await axios.get(`/api/users/search`, {
+          params: { q: query, roomId: roomId },
+        });
+        setSearchResults(response.data);
+      } catch (error) {
+        console.error("User search error:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [roomId]
+  );
 
   // Debounced search
   useEffect(() => {
@@ -68,13 +75,17 @@ export function InviteModal({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, inviteTab]);
+  }, [searchQuery, inviteTab, searchUsers]);
 
-  const toggleUserSelection = (user: {_id: string; username: string; email: string}) => {
-    setSelectedUsers(prev => {
-      const isSelected = prev.find(u => u._id === user._id);
+  const toggleUserSelection = (user: {
+    _id: string;
+    username: string;
+    email: string;
+  }) => {
+    setSelectedUsers((prev) => {
+      const isSelected = prev.find((u) => u._id === user._id);
       if (isSelected) {
-        return prev.filter(u => u._id !== user._id);
+        return prev.filter((u) => u._id !== user._id);
       } else if (prev.length < 5) {
         return [...prev, user];
       } else {
@@ -91,9 +102,10 @@ export function InviteModal({
   const handleSendInvites = async () => {
     setIsGeneratingInvite(true);
     try {
-      const emailsToInvite = inviteTab === "users" 
-        ? selectedUsers.map(u => u.email)
-        : [customEmail];
+      const emailsToInvite =
+        inviteTab === "users"
+          ? selectedUsers.map((u) => u.email)
+          : [customEmail];
 
       if (emailsToInvite.length === 0) {
         toast.error("Please select users or enter an email");
@@ -102,19 +114,21 @@ export function InviteModal({
       }
 
       const results = await Promise.allSettled(
-        emailsToInvite.map(email => 
-          axios.post(`/api/rooms/${roomId}/invite`, { 
+        emailsToInvite.map((email) =>
+          axios.post(`/api/rooms/${roomId}/invite`, {
             expiryDays: 7,
-            inviteeEmail: email 
+            inviteeEmail: email,
           })
         )
       );
 
-      const successful = results.filter(r => r.status === "fulfilled").length;
-      const failed = results.filter(r => r.status === "rejected").length;
+      const successful = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
 
       if (successful > 0) {
-        toast.success(`${successful} invite${successful > 1 ? 's' : ''} sent successfully!`);
+        toast.success(
+          `${successful} invite${successful > 1 ? "s" : ""} sent successfully!`
+        );
         onInvitesSent();
         onOpenChange(false);
         setSelectedUsers([]);
@@ -123,7 +137,7 @@ export function InviteModal({
       }
 
       if (failed > 0) {
-        toast.error(`${failed} invite${failed > 1 ? 's' : ''} failed to send`);
+        toast.error(`${failed} invite${failed > 1 ? "s" : ""} failed to send`);
       }
     } catch {
       toast.error("Failed to send invites");
@@ -134,15 +148,19 @@ export function InviteModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>Send Invites</DialogTitle>
           <DialogDescription>
-            Search for registered users or enter an email address to send room invitations.
+            Search for registered users or enter an email address to send room
+            invitations.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={inviteTab} onValueChange={(v) => setInviteTab(v as "users" | "email")}>
+        <Tabs
+          value={inviteTab}
+          onValueChange={(v) => setInviteTab(v as "users" | "email")}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="users">Search Users</TabsTrigger>
             <TabsTrigger value="email">Enter Email</TabsTrigger>
@@ -168,7 +186,7 @@ export function InviteModal({
               <div className="space-y-2">
                 <Label>Selected ({selectedUsers.length}/5)</Label>
                 <div className="flex flex-wrap gap-2">
-                  {selectedUsers.map(user => (
+                  {selectedUsers.map((user) => (
                     <div
                       key={user._id}
                       className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
@@ -190,7 +208,7 @@ export function InviteModal({
             {searchQuery && (
               <div className="space-y-2">
                 <Label>Results</Label>
-                <div className="border rounded-md max-h-[200px] overflow-y-auto">
+                <div className="border rounded-md max-h-50 overflow-y-auto">
                   {isSearching ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
@@ -198,20 +216,26 @@ export function InviteModal({
                     </div>
                   ) : searchResults.length > 0 ? (
                     <div className="divide-y">
-                      {searchResults.map(user => {
-                        const isSelected = selectedUsers.find(u => u._id === user._id);
+                      {searchResults.map((user) => {
+                        const isSelected = selectedUsers.find(
+                          (u) => u._id === user._id
+                        );
                         return (
                           <div
                             key={user._id}
                             onClick={() => toggleUserSelection(user)}
                             className={`p-3 cursor-pointer hover:bg-secondary/50 transition-colors ${
-                              isSelected ? 'bg-secondary' : ''
+                              isSelected ? "bg-secondary" : ""
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-sm">{user.username}</p>
-                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                                <p className="font-medium text-sm">
+                                  {user.username}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {user.email}
+                                </p>
                               </div>
                               {isSelected && (
                                 <Check className="h-4 w-4 text-primary" />
@@ -242,7 +266,9 @@ export function InviteModal({
                 onChange={(e) => setCustomEmail(e.target.value)}
               />
               {customEmail && !isValidEmail(customEmail) && (
-                <p className="text-xs text-destructive">Please enter a valid email address</p>
+                <p className="text-xs text-destructive">
+                  Please enter a valid email address
+                </p>
               )}
             </div>
           </TabsContent>
@@ -266,7 +292,8 @@ export function InviteModal({
             disabled={
               isGeneratingInvite ||
               (inviteTab === "users" && selectedUsers.length === 0) ||
-              (inviteTab === "email" && (!customEmail || !isValidEmail(customEmail)))
+              (inviteTab === "email" &&
+                (!customEmail || !isValidEmail(customEmail)))
             }
           >
             {isGeneratingInvite ? (
@@ -277,7 +304,8 @@ export function InviteModal({
             ) : (
               <>
                 <Mail className="mr-2 h-4 w-4" />
-                Send Invite{inviteTab === "users" && selectedUsers.length > 1 ? "s" : ""}
+                Send Invite
+                {inviteTab === "users" && selectedUsers.length > 1 ? "s" : ""}
               </>
             )}
           </Button>

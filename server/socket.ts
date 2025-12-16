@@ -2,6 +2,16 @@ import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { parse } from "cookie";
 import crypto from "crypto";
+import {
+  ParticipantJoinedPayload,
+  ParticipantLeftPayload,
+  ParticipantKickedPayload,
+  ParticipantBannedPayload,
+  ParticipantUnbannedPayload,
+  ParticipantRoleChangedPayload,
+  RoomSettingsUpdatedPayload,
+  RoomDeletedPayload,
+} from "@/types/socket.types";
 
 const PORT = process.env.SOCKET_IO_PORT || 3001;
 
@@ -69,13 +79,16 @@ const httpServer = createServer((req, res) => {
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true }));
-      } catch (error: any) {
-        console.error("[HTTP] Error processing event:", error.message);
+      } catch (error: unknown) {
+        console.error(
+          "[HTTP] Error processing event:",
+          (error as Error).message
+        );
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             success: false,
-            error: error.message || "Invalid request",
+            error: (error as Error).message || "Invalid request",
           })
         );
       }
@@ -144,57 +157,78 @@ io.on("connection", (socket) => {
   });
 
   // server-side event handlers
-  socket.on("server:participant:joined", (payload: any) => {
-    console.log(
-      `[SERVER] Received server:participant:joined, broadcasting to room:${payload.roomId}`,
-      payload
-    );
-    io.to(`room:${payload.roomId}`).emit("participant:joined", payload);
-  });
+  socket.on(
+    "server:participant:joined",
+    (payload: ParticipantJoinedPayload) => {
+      console.log(
+        `[SERVER] Received server:participant:joined, broadcasting to room:${payload.roomId}`,
+        payload
+      );
+      io.to(`room:${payload.roomId}`).emit("participant:joined", payload);
+    }
+  );
 
-  socket.on("server:participant:left", (payload: any) => {
+  socket.on("server:participant:left", (payload: ParticipantLeftPayload) => {
     io.to(`room:${payload.roomId}`).emit("participant:left", payload);
   });
 
-  socket.on("server:participant:kicked", (payload: any) => {
-    io.to(`room:${payload.roomId}`).emit("participant:kicked", payload);
-  });
+  socket.on(
+    "server:participant:kicked",
+    (payload: ParticipantKickedPayload) => {
+      io.to(`room:${payload.roomId}`).emit("participant:kicked", payload);
+    }
+  );
 
-  socket.on("server:participant:banned", (payload: any) => {
-    io.to(`room:${payload.roomId}`).emit("participant:banned", payload);
-  });
+  socket.on(
+    "server:participant:banned",
+    (payload: ParticipantBannedPayload) => {
+      io.to(`room:${payload.roomId}`).emit("participant:banned", payload);
+    }
+  );
 
-  socket.on("server:participant:unbanned", (payload: any) => {
-    io.to(`room:${payload.roomId}`).emit("participant:unbanned", payload);
-  });
+  socket.on(
+    "server:participant:unbanned",
+    (payload: ParticipantUnbannedPayload) => {
+      io.to(`room:${payload.roomId}`).emit("participant:unbanned", payload);
+    }
+  );
 
-  socket.on("server:participant:role_changed", (payload: any) => {
-    io.to(`room:${payload.roomId}`).emit("participant:role_changed", payload);
-  });
+  socket.on(
+    "server:participant:role_changed",
+    (payload: ParticipantRoleChangedPayload) => {
+      io.to(`room:${payload.roomId}`).emit("participant:role_changed", payload);
+    }
+  );
 
-  socket.on("server:room:settings_updated", (payload: any) => {
-    io.to(`room:${payload.roomId}`).emit("room:settings_updated", payload);
-  });
+  socket.on(
+    "server:room:settings_updated",
+    (payload: RoomSettingsUpdatedPayload) => {
+      io.to(`room:${payload.roomId}`).emit("room:settings_updated", payload);
+    }
+  );
 
-  socket.on("server:room:deleted", (payload: any) => {
+  socket.on("server:room:deleted", (payload: RoomDeletedPayload) => {
     io.to(`room:${payload.roomId}`).emit("room:deleted", payload);
   });
 
   // chat event handlers
-  socket.on("chat:typing", ({ roomId, isTyping }) => {
-    console.log(
-      `[CHAT] Typing ${isTyping ? "start" : "stop"} from ${
-        socket.id
-      } in room ${roomId}`
-    );
+  socket.on(
+    "chat:typing",
+    ({ roomId, isTyping }: { roomId: string; isTyping: boolean }) => {
+      console.log(
+        `[CHAT] Typing ${isTyping ? "start" : "stop"} from ${
+          socket.id
+        } in room ${roomId}`
+      );
 
-    socket.to(`room:${roomId}`).emit("chat:typing", {
-      roomId,
-      userId: socket.data.userId || "unknown",
-      username: socket.data.username || "Unknown User",
-      isTyping,
-    });
-  });
+      socket.to(`room:${roomId}`).emit("chat:typing", {
+        roomId,
+        userId: socket.data.userId || "unknown",
+        username: socket.data.username || "Unknown User",
+        isTyping,
+      });
+    }
+  );
 });
 
 httpServer.listen(PORT, () => {

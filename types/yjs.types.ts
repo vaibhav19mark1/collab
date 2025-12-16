@@ -1,4 +1,5 @@
 import { Doc as YjsDoc } from "yjs";
+import { WebsocketProvider } from "y-websocket";
 
 export interface YjsProviderConfig {
   documentId: string;
@@ -8,7 +9,7 @@ export interface YjsProviderConfig {
 }
 
 export interface YjsContextValue {
-  provider: any | null; // WebsocketProvider
+  provider: WebsocketProvider | null;
   doc: YjsDoc | null;
   isConnected: boolean;
   synced: boolean;

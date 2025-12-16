@@ -62,7 +62,7 @@ class DocumentHandler {
     this.loadDocument();
 
     // listner 1: document listener
-    // When the document content changes (someone types), broadcast the update to everyone else
+    // When someone types, broadcast the update to everyone else
     this.doc.on("update", async (update: Uint8Array) => {
       // Save updates to MongoDB
       this.updateBuffer.push(update);
@@ -88,18 +88,32 @@ class DocumentHandler {
 
     // listner 2: awareness listener
     // When cursors move or users join/leave, broadcast the change
-    this.awareness.on("update", ({ added, updated, removed }: any) => {
-      const changedClients = added.concat(updated).concat(removed);
-      const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
-      encoding.writeVarUint8Array(
-        encoder,
-        awarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
-      );
-      const message = encoding.toUint8Array(encoder);
+    this.awareness.on(
+      "update",
+      ({
+        added,
+        updated,
+        removed,
+      }: {
+        added: number[];
+        updated: number[];
+        removed: number[];
+      }) => {
+        const changedClients = added.concat(updated).concat(removed);
+        const encoder = encoding.createEncoder();
+        encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
+        encoding.writeVarUint8Array(
+          encoder,
+          awarenessProtocol.encodeAwarenessUpdate(
+            this.awareness,
+            changedClients
+          )
+        );
+        const message = encoding.toUint8Array(encoder);
 
-      this.broadcast(message, null);
-    });
+        this.broadcast(message, null);
+      }
+    );
   }
 
   async flushUpdates() {
