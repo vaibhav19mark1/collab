@@ -9,6 +9,7 @@
     "dev": "concurrently \"pnpm dev:next\" \"pnpm dev:socket\" \"pnpm dev:yjs\"",
     "build": "next build --turbopack",
     "start": "next start",
+    "start:servers": "concurrently \"tsx server/index.ts\" \"tsx server/yjs-server.ts\"",
     "lint": "eslint",
     "type-check": "tsc --noEmit"
   },
