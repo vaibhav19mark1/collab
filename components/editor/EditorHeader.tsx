@@ -133,9 +133,10 @@ export const EditorHeader = ({
                           alt={participant.username}
                         />
                         <AvatarFallback
-                          className="text-primary-foreground text-xs"
+                          className="text-xs"
                           style={{
                             backgroundColor: participant.color || "#000",
+                            color: "white",
                           }}
                         >
                           {initials}

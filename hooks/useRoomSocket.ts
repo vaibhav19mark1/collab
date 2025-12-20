@@ -75,7 +75,7 @@ export const useRoomSocket = ({
       }
       if (showJoinLeave && !mute) {
         console.log(`[CLIENT] Showing toast for join`);
-        toast.success(`${payload.participant.username} joined the room`);
+        toast.info(`${payload.participant.username} joined the room`);
       }
       onParticipantJoined?.(payload);
     };
@@ -91,7 +91,7 @@ export const useRoomSocket = ({
     const handleParticipantLeft = (payload: ParticipantLeftPayload) => {
       if (payload.userId === userId) return; // ignore self
       if (showJoinLeave && !mute) {
-        toast.success(`${payload.username} left the room`);
+        toast.info(`${payload.username} left the room`);
       }
       onParticipantLeft?.(payload);
     };
