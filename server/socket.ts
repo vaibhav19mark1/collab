@@ -101,9 +101,11 @@ const httpServer = createServer((req, res) => {
 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000",
+    origin: [process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000"],
     credentials: true,
   },
+  transports: ["websocket", "polling"], // Try WebSocket first, fallback to polling
+  allowEIO3: true, // support for older socket.io clients
   pingInterval: 5000,
   pingTimeout: 3000,
 });
