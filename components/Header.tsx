@@ -61,7 +61,7 @@ export function Header() {
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-2">
             <Image
-              src={`/logo-${resolvedTheme}2.png`}
+              src={`/logo-${resolvedTheme}.png`}
               alt="Collab Logo"
               className="cursor-pointer"
               width={120}

@@ -98,6 +98,7 @@ export async function POST(
       role: "member",
       joinedAt: new Date(),
       color: userColor,
+      avatar: session.user.image || undefined,
     });
 
     await room.save();

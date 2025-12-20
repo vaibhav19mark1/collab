@@ -4,6 +4,7 @@ export interface Message extends Document {
   roomId: Types.ObjectId;
   userId: string;
   username: string;
+  avatar?: string;
   message: string;
   createdAt: Date;
   updatedAt: Date;
@@ -25,6 +26,9 @@ const messageSchema = new Schema<Message>(
     username: {
       type: String,
       required: true,
+    },
+    avatar: {
+      type: String,
     },
     message: {
       type: String,

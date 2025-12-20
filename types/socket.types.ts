@@ -6,6 +6,7 @@ interface ParticipantJoinedPayload {
     role: "owner" | "admin" | "member";
     joinedAt: Date;
     color: string;
+    avatar?: string;
   };
 }
 
@@ -79,6 +80,7 @@ interface ChatMessagePayload {
   messageId: string;
   userId: string;
   username: string;
+  avatar?: string;
   message: string;
   timestamp: Date;
 }

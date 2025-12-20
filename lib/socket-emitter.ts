@@ -22,7 +22,7 @@ type SocketEventPayload =
   | RoomDeletedPayload;
 
 const SOCKET_SERVER_BASE_URL =
-  process.env.SOCKET_URL || "http://localhost:3001";
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
 const ADMIN_KEY = process.env.SOCKET_ADMIN_KEY!;
 
 // Use HTTP POST to emit events from serverless functions
@@ -40,6 +40,7 @@ const emitToSocketServer = async (
           "Content-Type": "application/json",
           "x-admin-key": ADMIN_KEY,
         },
+        timeout: 5000,
       }
     );
   } catch (error) {

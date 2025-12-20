@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Lock, UserCheck, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
 type AuthMode = "login" | "signup";
 
@@ -23,8 +24,14 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const isSigningUp = mode === "signup";
+  const { resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,13 +193,22 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center mb-3">
-            <Image
-              src="/logo-light-nobg.png"
-              alt="Collab Logo"
-              width={200}
-              height={100}
-            />
+          <div className="inline-flex items-center justify-center mb-3 w-50 h-25">
+            {mounted ? (
+              <Image
+                key={resolvedTheme}
+                src={`/logo-${
+                  resolvedTheme === "dark" ? "dark" : "light"
+                }-nobg.png`}
+                alt="Collab Logo"
+                width={200}
+                height={100}
+                priority
+                className="object-contain"
+              />
+            ) : (
+              <div className="w-50 h-25" />
+            )}
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
             {isSigningUp ? "Join Our Community" : "Let's Start Learning"}

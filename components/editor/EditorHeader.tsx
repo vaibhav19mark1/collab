@@ -8,7 +8,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Participant as RoomParticipant } from "@/types/room.types";
@@ -38,6 +39,7 @@ export const EditorHeader = ({
   roomId,
   participants = [],
 }: EditorHeaderProps) => {
+  const { data: session } = useSession();
   const [activeUserIds, setActiveUserIds] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!provider) return;
@@ -122,6 +124,14 @@ export const EditorHeader = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background cursor-pointer transition-transform hover:z-10 hover:scale-110">
+                        <AvatarImage
+                          src={
+                            participant.userId === session?.user?._id
+                              ? (session?.user?.image as string)
+                              : participant.avatar
+                          }
+                          alt={participant.username}
+                        />
                         <AvatarFallback
                           className="text-primary-foreground text-xs"
                           style={{

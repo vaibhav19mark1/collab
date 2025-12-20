@@ -5,6 +5,7 @@ export interface ChatMessage {
   messageId: string;
   userId: string;
   username: string;
+  avatar?: string;
   message: string;
   timestamp: Date;
   status?: "sending" | "sent" | "error";

@@ -43,6 +43,9 @@ const participantSchema = new Schema<Participant>(
     color: {
       type: String,
     },
+    avatar: {
+      type: String,
+    },
   },
   { _id: false }
 );
@@ -66,6 +69,9 @@ const bannedUserSchema = new Schema<BannedUser>(
       default: Date.now,
     },
     reason: {
+      type: String,
+    },
+    avatar: {
       type: String,
     },
   },

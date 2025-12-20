@@ -169,6 +169,7 @@ export const authOptions = {
             user._id = existingUser._id.toString();
             user.username = existingUser.username;
             user.isVerified = existingUser.isVerified;
+            user.image = existingUser.avatar || user.image;
             return true;
           } else {
             // Generate unique username from email

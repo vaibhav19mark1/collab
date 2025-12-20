@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
           role: "owner",
           joinedAt: new Date(),
           color: generateColor(session.user.username || "Unknown"),
+          avatar: session.user.image || undefined,
         },
       ],
     });

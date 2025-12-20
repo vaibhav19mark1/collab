@@ -64,6 +64,7 @@ export async function POST(
       roomId,
       userId,
       username: session.user.username,
+      avatar: session.user.image || undefined,
       message: message.trim(),
     });
 
@@ -75,6 +76,7 @@ export async function POST(
       messageId,
       userId,
       username: session.user.username as string,
+      avatar: session.user.image || undefined,
       message: message.trim(),
       timestamp: newMessage.createdAt,
     });
@@ -85,6 +87,7 @@ export async function POST(
         messageId,
         userId,
         username: session.user.username,
+        avatar: session.user.image || undefined,
         message: newMessage.message,
         timestamp: newMessage.createdAt,
       },
@@ -158,6 +161,7 @@ export async function GET(
         messageId: msg._id.toString(),
         userId: msg.userId,
         username: msg.username,
+        avatar: msg.avatar,
         message: msg.message,
         timestamp: msg.createdAt,
       })),

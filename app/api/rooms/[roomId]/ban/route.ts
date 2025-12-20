@@ -99,6 +99,7 @@ export async function POST(
     room.bannedUsers.push({
       userId: bannedUserId,
       username: bannedUser.username,
+      avatar: bannedUser.avatar,
       bannedBy: session.user._id,
       bannedAt: new Date(),
       reason,

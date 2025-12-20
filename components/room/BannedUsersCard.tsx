@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
@@ -61,9 +62,15 @@ export const BannedUsersCard = ({
                 className="flex items-center justify-between p-3 rounded-lg border border-destructive/20 bg-destructive/5"
               >
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="h-10 w-10 rounded-full flex items-center justify-center bg-destructive text-destructive-foreground font-semibold">
-                    {bannedUser.username.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src={bannedUser.avatar}
+                      alt={bannedUser.username}
+                    />
+                    <AvatarFallback className="bg-destructive text-destructive-foreground font-semibold">
+                      {bannedUser.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex-1">
                     <p className="font-medium">{bannedUser.username}</p>
                     <p className="text-xs text-muted-foreground">

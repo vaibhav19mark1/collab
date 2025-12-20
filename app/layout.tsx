@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
-import { Toaster } from "sonner";
 import { Header } from "@/components/Header";
+import { SonnerToaster } from "@/lib/sonner-toster";
 import "@/styles/globals.css";
 
 const geistSans = Geist({
@@ -33,7 +33,7 @@ export default function RootLayout({
         <Providers>
           <Header />
           <main className="flex-1 overflow-y-auto">{children}</main>
-          <Toaster richColors position="bottom-right" duration={3000} />
+          <SonnerToaster />
         </Providers>
       </body>
     </html>

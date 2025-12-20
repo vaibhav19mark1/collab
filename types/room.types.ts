@@ -6,6 +6,7 @@ export interface BannedUser {
   bannedAt: Date;
   bannedBy: string;
   reason?: string;
+  avatar?: string;
 }
 
 export interface Participant {
@@ -14,6 +15,7 @@ export interface Participant {
   role: ParticipantRole;
   joinedAt: Date;
   color?: string;
+  avatar?: string;
 }
 
 export interface Room {

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
@@ -53,6 +55,7 @@ export const ParticipantsCard = ({
   canManage,
   setConfirmDialog,
 }: ParticipantsCardProps) => {
+  const { data: session } = useSession();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const canManageParticipant = (participant: Participant) => {
@@ -188,12 +191,22 @@ export const ParticipantsCard = ({
                 className="flex items-center justify-between p-3 rounded-lg border"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground font-semibold"
-                    style={{ backgroundColor: avatarColor }}
-                  >
-                    {participant.username.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src={
+                        participant.userId === currentUserId
+                          ? (session?.user?.image as string)
+                          : participant.avatar
+                      }
+                      alt={participant.username}
+                    />
+                    <AvatarFallback
+                      className="text-primary-foreground font-semibold"
+                      style={{ backgroundColor: avatarColor }}
+                    >
+                      {participant.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <p className="font-medium">{participant.username}</p>
                     <p className="text-xs text-muted-foreground">

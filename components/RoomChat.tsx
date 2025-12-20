@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { useUIStore } from "@/stores/uiStore";
 import { useChatStore } from "@/stores/chatStore";
@@ -17,6 +18,7 @@ type messageType = {
   messageId: string;
   userId: string;
   username: string;
+  avatar?: string;
   message: string;
   timestamp: string;
 };
@@ -99,6 +101,7 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
       messageId: tempId,
       userId,
       username: session?.user?.name || "You",
+      avatar: session?.user?.image || undefined,
       message: messageToSend,
       timestamp: new Date(),
       status: "sending" as const,
@@ -205,13 +208,19 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
               >
                 {/* Avatar */}
                 <div className="flex-shrink-0">
-                  <div
-                    className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-primary-foreground shadow-sm ${
-                      isOwnMessage ? "bg-primary" : "bg-primary"
-                    }`}
-                  >
-                    {msg.username.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar className="h-8 w-8 shadow-sm">
+                    <AvatarImage
+                      src={
+                        isOwnMessage
+                          ? (session?.user?.image as string)
+                          : msg.avatar
+                      }
+                      alt={msg.username}
+                    />
+                    <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+                      {msg.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
 
                 {/* Message Bubble */}

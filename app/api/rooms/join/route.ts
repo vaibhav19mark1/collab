@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
       role: "member",
       joinedAt: new Date(),
       color: userColor,
+      avatar: session.user.image || undefined,
     });
 
     await room.save();
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
         role: "member",
         joinedAt: new Date(),
         color: userColor,
+        avatar: session.user.image || undefined,
       },
     });
 
