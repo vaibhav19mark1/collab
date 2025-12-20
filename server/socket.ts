@@ -105,8 +105,8 @@ const io = new SocketIOServer(httpServer, {
     credentials: true,
     methods: ["GET", "POST"],
   },
-  transports: ["polling", "websocket"], // polling for reliable cookie transmission
-  allowEIO3: true, // support for older socket.io clients
+  transports: ["polling", "websocket"],
+  allowEIO3: true,
   pingInterval: 5000,
   pingTimeout: 3000,
 });
@@ -114,23 +114,35 @@ const io = new SocketIOServer(httpServer, {
 // auth middleware
 io.use(async (socket, next) => {
   try {
+    // Priority 1: Check auth params (for cross-domain deployments)
+    const userId = socket.handshake.auth?.userId;
+
+    if (userId) {
+      socket.data.userId = userId;
+      console.log(`[AUTH] User authenticated via auth params: ${userId}`);
+      return next();
+    }
+
+    // Priority 2: Check cookies (for same-domain deployments)
     const cookies = socket.handshake.headers.cookie;
-    if (!cookies) {
-      return next(new Error("Authentication error: No cookies sent"));
+    if (cookies) {
+      const parsedCookies = parse(cookies);
+      const sessionToken =
+        parsedCookies["authjs.session-token"] ||
+        parsedCookies["__Secure-authjs.session-token"];
+
+      if (sessionToken) {
+        socket.data.sessionToken = sessionToken;
+        console.log(`[AUTH] User authenticated via cookies`);
+        return next();
+      }
     }
 
-    const parsedCookies = parse(cookies);
-    const sessionToken =
-      parsedCookies["authjs.session-token"] ||
-      parsedCookies["__Secure-authjs.session-token"];
-
-    if (!sessionToken) {
-      return next(new Error("Authentication error: No session token"));
-    }
-    socket.data.sessionToken = sessionToken;
-    next();
+    // No valid auth method found
+    return next(new Error("Authentication error: No valid auth credentials"));
   } catch (error) {
-    console.error(error);
+    console.error("[AUTH] Error:", error);
+    return next(new Error("Authentication error: Internal error"));
   }
 });
 

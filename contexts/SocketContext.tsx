@@ -40,7 +40,7 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     useState<SocketContextValue["status"]>("disconnected");
 
   useEffect(() => {
-    if (sessionStatus !== "authenticated" || !session) return;
+    if (sessionStatus !== "authenticated" || !session || !session.user) return;
 
     const socketUrl =
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
@@ -55,6 +55,9 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
       timeout: 10000,
+      auth: {
+        userId: session.user._id,
+      },
     });
 
     newSocket.on("connect", () => {
