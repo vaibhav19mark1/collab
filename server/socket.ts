@@ -103,8 +103,9 @@ const io = new SocketIOServer(httpServer, {
   cors: {
     origin: [process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000"],
     credentials: true,
+    methods: ["GET", "POST"],
   },
-  transports: ["websocket", "polling"], // Try WebSocket first, fallback to polling
+  transports: ["polling", "websocket"], // polling for reliable cookie transmission
   allowEIO3: true, // support for older socket.io clients
   pingInterval: 5000,
   pingTimeout: 3000,

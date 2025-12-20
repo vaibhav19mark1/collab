@@ -48,7 +48,7 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const newSocket: TypedSocket = io(socketUrl, {
       withCredentials: true,
       autoConnect: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       upgrade: true,
       reconnection: true,
       reconnectionDelay: 1000,
