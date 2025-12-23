@@ -8,6 +8,8 @@ import { YjsProvider } from "@/contexts/YjsContext";
 import { CollaborativeEditor } from "@/components/editor/CollaborativeEditor";
 import { toast } from "sonner";
 import { Participant } from "@/types/room.types";
+import RoomChat from "@/components/RoomChat";
+import { useUIStore } from "@/stores/uiStore";
 
 interface Document {
   id: string;
@@ -32,6 +34,8 @@ export default function DocumentPage() {
     name: string;
     color: string;
   } | null>(null);
+
+  const setActiveRoomId = useUIStore((s) => s.setActiveRoomId);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,8 +63,11 @@ export default function DocumentPage() {
 
     if (roomId && documentId) {
       fetchData();
+      setActiveRoomId(roomId);
     }
-  }, [roomId, documentId, router]);
+
+    return () => setActiveRoomId(null);
+  }, [roomId, documentId, router, setActiveRoomId]);
 
   // Memoize config to prevent provider recreation
   // Must be before conditional returns to follow Rules of Hooks
@@ -93,7 +100,6 @@ export default function DocumentPage() {
     <div className="flex flex-col h-full bg-background">
       <div className="flex-1 overflow-hidden">
         <YjsProvider config={yjsConfig}>
-          {/* <></> */}
           <CollaborativeEditor
             editable={true}
             documentTitle={document.title}
@@ -102,6 +108,7 @@ export default function DocumentPage() {
           />
         </YjsProvider>
       </div>
+      <RoomChat roomId={roomId} />
     </div>
   );
 }

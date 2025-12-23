@@ -23,7 +23,6 @@ try {
     flushSize: 100,
     multipleCollections: false,
   });
-  console.log("[YJS] MongoDB Persistence initialized");
 } catch (error) {
   console.error("[YJS] Failed to initialize MongoDB Persistence:", error);
 }
@@ -126,9 +125,6 @@ class DocumentHandler {
     try {
       const mergedUpdates = Y.mergeUpdates(updatesToSave);
       await persistence.storeUpdate(this.name, mergedUpdates);
-      console.log(
-        `[YJS] Flushed ${updatesToSave.length} updates to DB for ${this.name}`
-      );
     } catch (error) {
       console.error(`[YJS] Error flushing updates for ${this.name}:`, error);
     }
@@ -140,7 +136,6 @@ class DocumentHandler {
       const persistedYdoc = await persistence.getYDoc(this.name);
       const newUpdates = Y.encodeStateAsUpdate(persistedYdoc);
       Y.applyUpdate(this.doc, newUpdates);
-      console.log(`[YJS] Loaded document content for: ${this.name}`);
     } catch (error) {
       console.error(`[YJS] Error loading document ${this.name}:`, error);
     }
@@ -169,7 +164,6 @@ const documents = new Map<string, DocumentHandler>();
  */
 const getDocument = (name: string): DocumentHandler => {
   if (!documents.has(name)) {
-    console.log(`[YJS] Creating new document: ${name}`);
     documents.set(name, new DocumentHandler(name));
   }
   return documents.get(name)!;
@@ -186,12 +180,9 @@ wss.on("connection", (conn, req) => {
   const docName = url.pathname.slice(1); // Remove leading slash
 
   if (!docName) {
-    console.log("[YJS] Connection rejected: no document name");
     conn.close();
     return;
   }
-
-  console.log(`[YJS] Client connected to: ${docName}`);
 
   // 2. Get the document handler and register this client
   const docHandler = getDocument(docName);
@@ -254,14 +245,12 @@ wss.on("connection", (conn, req) => {
 
   // 5. Handle Disconnection
   conn.on("close", () => {
-    console.log(`[YJS] Client disconnected from: ${docName}`);
     docHandler.clients.delete(conn);
 
     // Cleanup: If no clients left, remove the document from memory after a delay
     if (docHandler.clients.size === 0) {
       setTimeout(() => {
         if (docHandler.clients.size === 0) {
-          console.log(`[YJS] Cleaning up empty document: ${docName}`);
           documents.delete(docName);
         }
       }, 30000); // 30 seconds timeout
@@ -270,7 +259,7 @@ wss.on("connection", (conn, req) => {
 });
 
 server.listen(YJS_PORT, () => {
-  console.log(`Yjs WebSocket server running on port ${YJS_PORT}`);
+  console.log(`Yjs WebSocket server running`);
 });
 
 export { wss };

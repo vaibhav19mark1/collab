@@ -24,6 +24,7 @@ interface RoomModalProps {
   onClose: () => void;
   onRoomCreated?: (room: Room) => void;
   onRoomJoined?: (room: Room) => void;
+  initialTab?: "create" | "join";
 }
 
 export function RoomModal({
@@ -31,8 +32,9 @@ export function RoomModal({
   onClose,
   onRoomCreated,
   onRoomJoined,
+  initialTab = "create",
 }: RoomModalProps) {
-  const [activeTab, setActiveTab] = useState<"create" | "join">("create");
+  const [activeTab, setActiveTab] = useState<"create" | "join">(initialTab);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 

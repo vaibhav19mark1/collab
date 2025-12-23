@@ -61,14 +61,12 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     newSocket.on("connect", () => {
-      console.log("Socket.io connected");
       setIsConnected(true);
       setStatus("connected");
       useUIStore.getState().setSocketStatus("connected");
     });
 
     newSocket.on("disconnect", () => {
-      console.log("Socket.io disconnected");
       setIsConnected(false);
       setStatus("disconnected");
       useUIStore.getState().setSocketStatus("disconnected");
@@ -81,20 +79,17 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     newSocket.io.on("reconnect_attempt", () => {
-      console.log("Attempting to reconnect...");
       setStatus("reconnecting");
       useUIStore.getState().setSocketStatus("reconnecting");
     });
 
     newSocket.io.on("reconnect", () => {
-      console.log("Socket.io reconnected");
       setIsConnected(true);
       setStatus("connected");
       useUIStore.getState().setSocketStatus("connected");
     });
 
     newSocket.io.on("reconnect_failed", () => {
-      console.error("Socket.io reconnection failed");
       setStatus("disconnected");
       useUIStore.getState().setSocketStatus("disconnected");
       toast.error(
@@ -106,7 +101,6 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     setSocket(newSocket);
 
     return () => {
-      console.log("Disconnecting socket.io client...");
       newSocket.close();
     };
   }, [sessionStatus]);

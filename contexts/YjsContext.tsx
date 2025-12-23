@@ -47,12 +47,10 @@ const YjsProvider = ({
 
     wsProvider.on("status", (event: { status: string }) => {
       setIsConnected(event.status === "connected");
-      console.log(`[YJS] Connection status: ${event.status}`);
     });
 
     wsProvider.on("sync", (isSynced: boolean) => {
       setSynced(isSynced);
-      console.log(`[YJS] Sync status: ${isSynced}`);
     });
 
     setDoc(yjsDoc);

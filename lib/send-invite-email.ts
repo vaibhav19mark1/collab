@@ -45,7 +45,6 @@ const sendInviteEmail = async ({
       throw new Error(`Failed to send email: ${error.message}`);
     }
 
-    console.log("Invite email sent successfully:", data);
     return { success: true, data };
   } catch (error) {
     console.error("Error in sendInviteEmail:", error);

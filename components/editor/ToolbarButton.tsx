@@ -13,6 +13,8 @@ interface ToolbarButtonProps {
   label: string;
   shortcut?: string;
   className?: string;
+  disabled?: boolean;
+  iconClassName?: string;
 }
 
 export const ToolbarButton = ({
@@ -22,6 +24,8 @@ export const ToolbarButton = ({
   label,
   shortcut,
   className,
+  disabled = false,
+  iconClassName,
 }: ToolbarButtonProps) => (
   <Tooltip>
     <TooltipTrigger asChild>
@@ -35,8 +39,9 @@ export const ToolbarButton = ({
         )}
         onClick={onClick}
         type="button"
+        disabled={disabled}
       >
-        {Icon && <Icon className="h-4 w-4" />}
+        {Icon && <Icon className={cn("h-4 w-4", iconClassName)} />}
       </Button>
     </TooltipTrigger>
     <TooltipContent side="top" className="flex items-center gap-2">

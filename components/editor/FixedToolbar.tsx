@@ -1,37 +1,47 @@
-import { Editor } from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
-import {
-  Link as LinkIcon,
-  Highlighter,
-  Palette,
-  ChevronDown,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Editor } from "@tiptap/react";
+import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  ChevronDown,
+  Grid2x2Plus,
+  Highlighter,
+  Link as LinkIcon,
+  Palette,
+  Rows2,
+  Rows3,
+  Subscript,
+  Superscript,
+  Table,
+  Trash,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useDebouncedEditorUpdate } from "@/hooks/useDebouncedEditorUpdate";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import {
   colors,
+  getCodeButtons,
   getMenuConfigs,
   getToolbarButtons,
-  getCodeButtons,
-  type MenuId,
   type MenuConfig,
+  type MenuId,
 } from "./helper";
 import { ToolbarButton } from "./ToolbarButton";
 
-interface FloatingToolbarProps {
+interface FixedToolbarProps {
   editor: Editor;
 }
 
-export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
+export const FixedToolbar = ({ editor }: FixedToolbarProps) => {
   const [linkUrl, setLinkUrl] = useState("");
   const [openMenuId, setOpenMenuId] = useState<MenuId | null>(null);
 
@@ -59,12 +69,9 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
     setLinkUrl("");
   };
 
-  const menuConfigs = getMenuConfigs(editor);
+  const menuConfigs = getMenuConfigs(editor).filter((c) => c.id !== "more");
   const toolbarButtons = getToolbarButtons(editor);
   const codeButtons = getCodeButtons(editor);
-
-  const shouldShow = ({ from, to }: { from: number; to: number }) =>
-    from !== to;
 
   const MenuItem = ({
     onClick,
@@ -111,9 +118,9 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
             </div>
           </PopoverTrigger>
           <PopoverContent
-            className="w-60 p-2"
+            className="w-60 p-2 z-9999"
             align={config.align || "start"}
-            side="top"
+            side="bottom"
           >
             {config.customContent}
           </PopoverContent>
@@ -159,9 +166,9 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className={cn("p-2", config.width)}
+          className={cn("p-2 z-9999", config.width)}
           align={config.align || "start"}
-          side="top"
+          side="bottom"
         >
           {config.sections?.map((section, sectionIdx) => (
             <div key={sectionIdx}>
@@ -194,46 +201,86 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
   };
 
   return (
-    <TooltipProvider>
-      <BubbleMenu
-        editor={editor}
-        shouldShow={shouldShow}
-        className="flex items-center gap-1 p-1 rounded-lg border bg-background shadow-lg overflow-hidden max-w-[90vw] flex-wrap"
-      >
-        {/* Dynamic Menus */}
-        {menuConfigs.map((config) => renderMenu(config))}
+    <div className="flex items-center gap-1 p-2 border-b bg-background flex-wrap">
+      {/* Dynamic Menus (Hierarchy, Fonts) */}
+      {menuConfigs.map((config) => renderMenu(config))}
 
-        <div className="w-px h-4 bg-border mx-1" />
+      <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
 
-        {/* Toolbar Buttons - Text Formatting */}
-        {toolbarButtons.map((button, idx) => (
-          <ToolbarButton
-            key={idx}
-            onClick={button.action}
-            isActive={button.isActive}
-            icon={button.icon}
-            label={button.label}
-            shortcut={button.shortcut}
-          />
-        ))}
+      {/* Basic Text Formatting */}
+      {toolbarButtons.map((button, idx) => (
+        <ToolbarButton
+          key={idx}
+          onClick={button.action}
+          isActive={button.isActive}
+          icon={button.icon}
+          label={button.label}
+          shortcut={button.shortcut}
+        />
+      ))}
 
-        <div className="w-px h-4 bg-border mx-1" />
+      {/* Subscript / Superscript */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleSubscript().run()}
+        isActive={editor.isActive("subscript")}
+        icon={Subscript}
+        label="Subscript"
+      />
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleSuperscript().run()}
+        isActive={editor.isActive("superscript")}
+        icon={Superscript}
+        label="Superscript"
+      />
 
-        {/* Code Buttons */}
-        {codeButtons.map((button, idx) => (
-          <ToolbarButton
-            key={idx}
-            onClick={button.action}
-            isActive={button.isActive}
-            icon={button.icon}
-            label={button.label}
-            shortcut={button.shortcut}
-          />
-        ))}
+      <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
 
-        <div className="w-px h-4 bg-border mx-1" />
+      {/* Alignment */}
+      <div className="flex items-center gap-0.5">
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          isActive={editor.isActive({ textAlign: "left" })}
+          icon={AlignLeft}
+          label="Align Left"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          isActive={editor.isActive({ textAlign: "center" })}
+          icon={AlignCenter}
+          label="Align Center"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          isActive={editor.isActive({ textAlign: "right" })}
+          icon={AlignRight}
+          label="Align Right"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+          isActive={editor.isActive({ textAlign: "justify" })}
+          icon={AlignJustify}
+          label="Justify"
+        />
+      </div>
 
-        {/* Link Menu */}
+      <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
+
+      {/* Code Buttons */}
+      {codeButtons.map((button, idx) => (
+        <ToolbarButton
+          key={idx}
+          onClick={button.action}
+          isActive={button.isActive}
+          icon={button.icon}
+          label={button.label}
+          shortcut={button.shortcut}
+        />
+      ))}
+
+      <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
+
+      {/* Link, Highlight, Color */}
+      <div className="flex items-center gap-0.5">
         <Popover open={isMenuOpen("link")} onOpenChange={toggleMenu("link")}>
           <PopoverTrigger asChild>
             <div>
@@ -245,7 +292,11 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
               />
             </div>
           </PopoverTrigger>
-          <PopoverContent className="w-60 p-2" align="start" side="top">
+          <PopoverContent
+            className="w-60 p-2 z-9999"
+            align="start"
+            side="bottom"
+          >
             <div className="flex gap-2">
               <Input
                 placeholder="https://example.com"
@@ -273,7 +324,6 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
           shortcut="Cmd+Shift+H"
         />
 
-        {/* Color Menu */}
         <Popover open={isMenuOpen("color")} onOpenChange={toggleMenu("color")}>
           <PopoverTrigger asChild>
             <div>
@@ -284,7 +334,11 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
               />
             </div>
           </PopoverTrigger>
-          <PopoverContent className="w-40 p-2" align="start" side="top">
+          <PopoverContent
+            className="w-40 p-2 z-9999"
+            align="start"
+            side="bottom"
+          >
             <div className="grid grid-cols-5 gap-1">
               {colors.map((color) => (
                 <button
@@ -301,7 +355,72 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
             </div>
           </PopoverContent>
         </Popover>
-      </BubbleMenu>
-    </TooltipProvider>
+      </div>
+
+      <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
+
+      {/* Table Controls */}
+      <ToolbarButton
+        onClick={() =>
+          editor
+            .chain()
+            .focus()
+            .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+            .run()
+        }
+        isActive={false}
+        icon={Table}
+        label="Insert Table"
+      />
+
+      <div className="w-px h-4 bg-border mx-1" />
+
+      <div className="flex items-center gap-1 animate-in fade-in slide-in-from-left-2 overflow-x-auto no-scrollbar max-w-full">
+        <ToolbarButton
+          onClick={() => editor.chain().focus().addColumnBefore().run()}
+          isActive={false}
+          icon={Grid2x2Plus}
+          label="Add Column Before"
+          iconClassName={"rotate-90"}
+          disabled={!editor.isActive("table")}
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().addColumnAfter().run()}
+          isActive={false}
+          icon={Grid2x2Plus}
+          label="Add Column After"
+          disabled={!editor.isActive("table")}
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().deleteColumn().run()}
+          isActive={false}
+          icon={Trash2}
+          label="Delete Column"
+          disabled={!editor.isActive("table")}
+        />
+        <div className="w-px h-4 bg-border mx-0.5" />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().addRowBefore().run()}
+          isActive={false}
+          icon={Rows2}
+          label="Add Row Before"
+          disabled={!editor.isActive("table")}
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().addRowAfter().run()}
+          isActive={false}
+          icon={Rows3}
+          label="Add Row After"
+          disabled={!editor.isActive("table")}
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().deleteRow().run()}
+          isActive={false}
+          icon={Trash}
+          label="Delete Row"
+          disabled={!editor.isActive("table")}
+        />
+      </div>
+    </div>
   );
 };

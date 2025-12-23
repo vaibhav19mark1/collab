@@ -19,7 +19,8 @@ type SocketEventPayload =
   | ParticipantUnbannedPayload
   | ParticipantRoleChangedPayload
   | RoomSettingsUpdatedPayload
-  | RoomDeletedPayload;
+  | RoomDeletedPayload
+  | ChatMessagePayload;
 
 const SOCKET_SERVER_BASE_URL =
   process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
@@ -30,7 +31,6 @@ const emitToSocketServer = async (
   event: string,
   payload: SocketEventPayload
 ) => {
-  console.log(`[EMITTER] Sending ${event} to socket server`, payload);
   try {
     await axios.post(
       `${SOCKET_SERVER_BASE_URL}/emit`,
@@ -44,7 +44,7 @@ const emitToSocketServer = async (
       }
     );
   } catch (error) {
-    console.error(error);
+    console.error(`[EMITTER] Error sending ${event}:`, error);
   }
 };
 
@@ -82,7 +82,6 @@ const socketEmitter = {
   },
 
   chatMessage: async (payload: ChatMessagePayload) => {
-    console.log("[EMITTER] Emitting chat:message event:", payload);
     emitToSocketServer("chat:message", payload);
   },
 };

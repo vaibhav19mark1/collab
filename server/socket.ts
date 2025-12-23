@@ -59,21 +59,13 @@ const httpServer = createServer((req, res) => {
           throw new Error("Invalid payload: missing roomId");
         }
 
-        console.log(`[HTTP] Received event ${event}`, payload);
-
         // Emit the event to the appropriate room
         if (event && event.startsWith("server:")) {
           const clientEvent = event.replace("server:", "");
           io.to(`room:${payload.roomId}`).emit(clientEvent, payload);
-          console.log(
-            `[HTTP] Broadcasted ${clientEvent} to room:${payload.roomId}`
-          );
         }
 
         if (event === "chat:message") {
-          console.log(
-            `[SERVER] Broadcasting chat:message to room:${payload.roomId}`
-          );
           io.to(`room:${payload.roomId}`).emit(event, payload);
         }
 
@@ -119,7 +111,6 @@ io.use(async (socket, next) => {
 
     if (userId) {
       socket.data.userId = userId;
-      console.log(`[AUTH] User authenticated via auth params: ${userId}`);
       return next();
     }
 
@@ -133,7 +124,6 @@ io.use(async (socket, next) => {
 
       if (sessionToken) {
         socket.data.sessionToken = sessionToken;
-        console.log(`[AUTH] User authenticated via cookies`);
         return next();
       }
     }
@@ -147,38 +137,24 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log(`Client socket connected: ${socket.id}`);
-
   socket.on("room:join", (roomId, userData) => {
     socket.join(`room:${roomId}`);
     if (userData) {
       socket.data.userId = userData.userId;
       socket.data.username = userData.username;
     }
-    console.log(
-      `Client ${socket.id} (${
-        socket.data.username || "unknown"
-      }) joined room ${roomId}`
-    );
   });
 
   socket.on("room:leave", (roomId) => {
     socket.leave(`room:${roomId}`);
-    console.log(`Client ${socket.id} left room ${roomId}`);
   });
 
-  socket.on("disconnect", () => {
-    console.log(`❌ Client disconnected: ${socket.id}`);
-  });
+  socket.on("disconnect", () => {});
 
   // server-side event handlers
   socket.on(
     "server:participant:joined",
     (payload: ParticipantJoinedPayload) => {
-      console.log(
-        `[SERVER] Received server:participant:joined, broadcasting to room:${payload.roomId}`,
-        payload
-      );
       io.to(`room:${payload.roomId}`).emit("participant:joined", payload);
     }
   );
@@ -230,12 +206,6 @@ io.on("connection", (socket) => {
   socket.on(
     "chat:typing",
     ({ roomId, isTyping }: { roomId: string; isTyping: boolean }) => {
-      console.log(
-        `[CHAT] Typing ${isTyping ? "start" : "stop"} from ${
-          socket.id
-        } in room ${roomId}`
-      );
-
       socket.to(`room:${roomId}`).emit("chat:typing", {
         roomId,
         userId: socket.data.userId || "unknown",
@@ -247,7 +217,7 @@ io.on("connection", (socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`Socket.io server running on port ${PORT}`);
+  console.log(`Socket.io server running`);
 });
 
 export { io };

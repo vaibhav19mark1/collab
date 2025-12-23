@@ -21,17 +21,13 @@ export const authOptions = {
       ) {
         try {
           await dbConnect();
-          console.log("Database connected successfully");
 
           if (!credentials?.email || !credentials?.password) {
-            console.log("Missing credentials");
             throw new Error("Email and password are required");
           }
 
           const email = String(credentials.email).toLowerCase().trim();
           const password = String(credentials.password);
-
-          console.log("Attempting login for email:", email);
 
           const user = (await User.findOne({
             email: email,
@@ -47,26 +43,19 @@ export const authOptions = {
 
           // user not found
           if (!user) {
-            console.log("User not found for email:", email);
             throw new Error("User not found");
           }
 
           // Check if user has a password (not OAuth-only user)
           if (!user.password) {
-            console.log("User has no password (OAuth account)");
             throw new Error("Please sign in with Google");
           }
 
-          console.log("Comparing passwords...");
           const isPasswordValid = await bcrypt.compare(password, user.password);
-
-          console.log("Password valid:", isPasswordValid);
 
           if (!isPasswordValid) {
             throw new Error("Invalid password");
           }
-
-          console.log("Login successful for user:", user.email);
 
           return {
             id: user._id.toString(),

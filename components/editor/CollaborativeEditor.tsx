@@ -4,6 +4,7 @@ import { EditorLayout } from "./EditorLayout";
 import { EditorHeader } from "./EditorHeader";
 import { Sidebar } from "./Sidebar";
 import { Editor } from "./Editor";
+import { FixedToolbar } from "./FixedToolbar";
 import { useState } from "react";
 import { Participant } from "@/types/room.types";
 import { Editor as TiptapEditor } from "@tiptap/react";
@@ -23,7 +24,9 @@ export const CollaborativeEditor = ({
 }: CollaborativeEditorProps) => {
   const { provider, doc, isConnected, synced } = useYjs();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [editorInstance, setEditorInstance] = useState<TiptapEditor | null>(null);
+  const [editorInstance, setEditorInstance] = useState<TiptapEditor | null>(
+    null
+  );
 
   if (!provider || !doc) {
     return (
@@ -37,16 +40,19 @@ export const CollaborativeEditor = ({
     <EditorLayout
       isSidebarOpen={isSidebarOpen}
       header={
-        <EditorHeader
-          editor={editorInstance}
-          provider={provider}
-          isSidebarOpen={isSidebarOpen}
-          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          isConnected={isConnected}
-          documentTitle={documentTitle}
-          roomId={roomId}
-          participants={participants}
-        />
+        <>
+          <EditorHeader
+            editor={editorInstance}
+            provider={provider}
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            isConnected={isConnected}
+            documentTitle={documentTitle}
+            roomId={roomId}
+            participants={participants}
+          />
+          {editorInstance && <FixedToolbar editor={editorInstance} />}
+        </>
       }
       sidebar={<Sidebar editor={editorInstance} />}
     >

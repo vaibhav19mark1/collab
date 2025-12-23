@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowRight, Plus, Users } from "lucide-react";
+import { ArrowRight, Plus, LogIn, Telescope } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -52,11 +52,11 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="lg:col-span-3 space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Card
                 className="group relative overflow-hidden cursor-pointer hover:shadow-md transition-all border-primary/20 hover:border-primary/50"
-                onClick={() => router.push("/rooms")}
+                onClick={() => router.push("/rooms?action=create")}
               >
                 <CardHeader>
                   <div className="p-3 bg-primary/10 w-fit rounded-lg mb-2 group-hover:scale-110 transition-transform duration-300">
@@ -73,17 +73,35 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
-
               <Card
                 className="group relative overflow-hidden cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+                onClick={() => router.push("/rooms?action=join")}
+              >
+                <CardHeader>
+                  <div className="p-3 bg-primary/10 w-fit rounded-lg mb-2 group-hover:scale-110 transition-transform duration-300">
+                    <LogIn className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Join Room</CardTitle>
+                  <CardDescription>Enter an existing room code</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-primary font-medium mt-2">
+                    Join Rooms <ArrowRight className="ml-2 h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card
+                className="group relative overflow-hidden cursor-pointer hover:shadow-md transition-all border-primary/20 hover:border-primary/50"
                 onClick={() => router.push("/rooms")}
               >
                 <CardHeader>
                   <div className="p-3 bg-primary/10 w-fit rounded-lg mb-2 group-hover:scale-110 transition-transform duration-300">
-                    <Users className="h-6 w-6 text-primary" />
+                    <Telescope className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle>Join Room</CardTitle>
-                  <CardDescription>Enter an existing room code</CardDescription>
+                  <CardTitle>Explore Rooms</CardTitle>
+                  <CardDescription>
+                    Browse and join existing collaborative sessions
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center text-sm text-primary font-medium mt-2">

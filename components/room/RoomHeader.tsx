@@ -151,32 +151,36 @@ export const RoomHeader = ({
 
   return (
     <div className="mb-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="-ml-2"
+              className="-ml-2 shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">{room.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate max-w-[200px] sm:max-w-md md:max-w-xl">
+              {room.name}
+            </h1>
             {isOwner && (
-              <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium shrink-0">
                 <Crown className="h-4 w-4" />
-                <span>Owner</span>
+                <span className="hidden xs:inline">Owner</span>
               </div>
             )}
-            <ConnectionStatus status={socketStatus} />
+            <div className="shrink-0">
+              <ConnectionStatus status={socketStatus} />
+            </div>
           </div>
-          <p className="text-muted-foreground ml-10">
+          <p className="text-muted-foreground ml-10 truncate max-w-md">
             {room.description || "No description provided"}
           </p>
         </div>
 
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-1 items-center shrink-0 mt-1">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -196,6 +200,7 @@ export const RoomHeader = ({
                     variant="ghost"
                     onClick={onGenerateInvite}
                     disabled={isGeneratingInvite}
+                    size="icon"
                   >
                     {isGeneratingInvite ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -204,7 +209,6 @@ export const RoomHeader = ({
                     ) : (
                       <Link className="h-4 w-4" />
                     )}
-                    {/* {copiedInvite ? "Link Copied!" : "Copy Invite Link"} */}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>

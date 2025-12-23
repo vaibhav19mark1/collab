@@ -6,9 +6,10 @@ import {
   useOptimistic,
   useMemo,
   startTransition,
+  Suspense,
 } from "react";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { RoomModal } from "@/components/RoomModal";
 import { RoomCard } from "@/components/RoomCard";
 import { Button } from "@/components/ui/button";
@@ -32,11 +33,32 @@ type OptimisticAction =
   | { type: "remove"; payload: string }
   | { type: "update"; payload: { id: string; updates: Partial<Room> } };
 
-export default function RoomsPage() {
+function SearchParamsHandler(props: {
+  onOpenModal: (tab: "create" | "join") => void;
+}) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (action === "create" || action === "join") {
+      props.onOpenModal(action);
+      router.replace("/rooms", { scroll: false });
+    }
+  }, [searchParams, router, props]);
+
+  return null;
+}
+
+function RoomsPageContent() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<RoomFilter>("all");
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [initialModalTab, setInitialModalTab] = useState<"create" | "join">(
+    "create"
+  );
   const { allRooms, setRooms } = useRoomStore();
   const { socket, on, off } = useSocket();
 
@@ -96,14 +118,12 @@ export default function RoomsPage() {
     if (!socket) return;
 
     const handleRoomDeleted = (payload: RoomDeletedPayload) => {
-      console.log("[RoomsPage] Room deleted:", payload.roomId);
       startTransition(() => {
         setRooms(allRooms.filter((room) => room._id !== payload.roomId));
       });
     };
 
     const handleSettingsUpdated = (payload: RoomSettingsUpdatedPayload) => {
-      console.log("[RoomsPage] Room settings updated:", payload.roomId);
       startTransition(() => {
         setRooms(
           allRooms.map((room) =>
@@ -124,7 +144,6 @@ export default function RoomsPage() {
     };
 
     const handleParticipantJoined = (payload: ParticipantJoinedPayload) => {
-      console.log("[RoomsPage] Participant joined:", payload.roomId);
       startTransition(() => {
         setRooms(
           allRooms.map((room) =>
@@ -144,7 +163,6 @@ export default function RoomsPage() {
     };
 
     const handleParticipantLeft = (payload: ParticipantLeftPayload) => {
-      console.log("[RoomsPage] Participant left:", payload.roomId);
       startTransition(() => {
         setRooms(
           allRooms.map((room) =>
@@ -193,6 +211,7 @@ export default function RoomsPage() {
     setTimeout(() => {
       startTransition(() => {
         setRooms([room, ...allRooms]);
+        router.push(`/rooms/${room._id}`);
       });
     }, 300);
   };
@@ -300,8 +319,25 @@ export default function RoomsPage() {
           onClose={() => setIsRoomModalOpen(false)}
           onRoomCreated={handleRoomCreated}
           onRoomJoined={handleRoomJoined}
+          initialTab={initialModalTab}
         />
       )}
+
+      {/* Handle search params for modal opening */}
+      <SearchParamsHandler
+        onOpenModal={(tab) => {
+          setInitialModalTab(tab);
+          setIsRoomModalOpen(true);
+        }}
+      />
     </div>
+  );
+}
+
+export default function RoomsPage() {
+  return (
+    <Suspense fallback={null}>
+      <RoomsPageContent />
+    </Suspense>
   );
 }

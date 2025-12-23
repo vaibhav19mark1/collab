@@ -21,10 +21,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description, isPrivate, password, maxParticipants } = body;
 
-    console.log("Session user:", session.user);
-    console.log("User ID:", session.user._id);
-    console.log("Username:", session.user.username);
-
     // Validate user ID
     const userId = session.user._id || session.user.id;
     if (!userId) {

@@ -102,7 +102,6 @@ export async function POST(
           inviteUrl,
           expiresInDays: expiryDays,
         });
-        console.log(`Invite email sent to ${inviteeEmail}`);
       } catch (error) {
         console.error("Failed to send invite email:", error);
       }

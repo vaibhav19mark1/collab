@@ -1,6 +1,6 @@
 import { Editor } from "@tiptap/react";
 import { WebsocketProvider } from "y-websocket";
-import { PanelLeft, ArrowLeft } from "lucide-react";
+import { PanelLeft, ArrowLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -13,6 +13,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Participant as RoomParticipant } from "@/types/room.types";
+import { useUIStore } from "@/stores/uiStore";
+import { useChatStore } from "@/stores/chatStore";
 
 interface Participant extends RoomParticipant {
   color?: string;
@@ -41,6 +43,9 @@ export const EditorHeader = ({
 }: EditorHeaderProps) => {
   const { data: session } = useSession();
   const [activeUserIds, setActiveUserIds] = useState<Set<string>>(new Set());
+  const toggleChat = useUIStore((s) => s.toggleChat);
+  const unreadCount = useChatStore((s) => s.unreadCountsByRoom[roomId] || 0);
+
   useEffect(() => {
     if (!provider) return;
 
@@ -68,8 +73,9 @@ export const EditorHeader = ({
 
   const wordCount = editor.storage.characterCount.words();
   const charCount = editor.storage.characterCount.characters();
-  const displayParticipants = participants.slice(0, 3);
-  const remainingParticipants = Math.max(0, participants.length - 3);
+  const activeUsers = participants.filter((p) => activeUserIds.has(p.userId));
+  const displayParticipants = activeUsers.slice(0, 3);
+  const remainingParticipants = Math.max(0, activeUsers.length - 3);
 
   return (
     <div className="h-16 border-b flex items-center justify-between px-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -144,10 +150,7 @@ export const EditorHeader = ({
                       </Avatar>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>
-                        {participant.username}
-                        {isActive && " (Active)"}
-                      </p>
+                      <p>{participant.username}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -159,6 +162,29 @@ export const EditorHeader = ({
               </div>
             )}
           </div>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleChat}
+                  className="relative"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Chat</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <TooltipProvider>
             <Tooltip>

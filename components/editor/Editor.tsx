@@ -37,6 +37,10 @@ import Underline from "@tiptap/extension-underline";
 import Text from "@tiptap/extension-text";
 import { common, createLowlight } from "lowlight";
 import { FontSize } from "./extensions/FontSize";
+import {
+  SlashCommand,
+  slashCommandSuggestion,
+} from "./extensions/slash-command";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { useEffect } from "react";
 import * as Y from "yjs";
@@ -112,6 +116,9 @@ export const Editor = ({
       }),
       TextStyle,
       FontSize,
+      SlashCommand.configure({
+        suggestion: slashCommandSuggestion,
+      }),
       Color,
       FontFamily,
       Highlight.configure({ multicolor: true }),

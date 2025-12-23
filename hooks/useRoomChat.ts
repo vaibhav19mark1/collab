@@ -31,7 +31,6 @@ export function useRoomChat({
     if (!socket || !enabled) return;
 
     const handleChatMessage = (payload: ChatMessagePayload) => {
-      console.log("[CLIENT] Received chat:message:", payload);
 
       // Add message to store
       addMessage(roomId, {

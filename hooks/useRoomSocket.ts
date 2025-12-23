@@ -50,13 +50,11 @@ export const useRoomSocket = ({
   // Join room on mount
   useEffect(() => {
     if (!isConnected || !roomId || hadJoinedRef.current) return;
-    console.log(`Joining room channel: ${roomId}`);
     emit("room:join", roomId, username ? { userId, username } : undefined);
     hadJoinedRef.current = true;
 
     return () => {
       if (hadJoinedRef.current) {
-        console.log(`Leaving room channel: ${roomId}`);
         emit("room:leave", roomId);
         hadJoinedRef.current = false;
       }
@@ -68,13 +66,10 @@ export const useRoomSocket = ({
     if (!socket) return;
 
     const handleParticipantJoined = (payload: ParticipantJoinedPayload) => {
-      console.log(`[CLIENT] Received participant:joined event`, payload);
       if (payload.participant.userId === userId) {
-        console.log(`[CLIENT] Ignoring self-join event`);
         return; // ignore self
       }
       if (showJoinLeave && !mute) {
-        console.log(`[CLIENT] Showing toast for join`);
         toast.info(`${payload.participant.username} joined the room`);
       }
       onParticipantJoined?.(payload);

@@ -159,18 +159,13 @@ const RoomChat = ({ roomId }: { roomId: string }) => {
 
   return (
     <div
-      className={`fixed right-0 top-16 h-[calc(100vh-4rem)] w-80 sm:w-96 bg-background border-l border-border flex flex-col z-40 shadow-xl transition-transform duration-300 ease-in-out ${
+      className={`fixed right-0 top-16 h-[calc(100vh-4rem)] w-80 sm:w-96 bg-background border-l border-border flex flex-col z-50 shadow-xl transition-transform duration-300 ease-in-out ${
         chatOpen ? "translate-x-0" : "translate-x-full"
       }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 backdrop-blur-sm">
-        <div>
-          <h3 className="font-semibold text-lg">Chat</h3>
-          <p className="text-xs text-muted-foreground">
-            {messages.length} messages
-          </p>
-        </div>
+        <h3 className="font-semibold text-lg">Chat</h3>
         <Button
           variant="ghost"
           size="icon"
