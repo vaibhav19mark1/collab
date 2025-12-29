@@ -1,0 +1,85 @@
+/* Monaco Editor Collaboration Styles */
+
+/* Remote cursor styling for y-monaco */
+.yRemoteSelection {
+  background-color: var(--user-color, rgba(250, 129, 0, 0.3));
+  opacity: 0.3;
+}
+
+.yRemoteSelectionHead {
+  position: absolute;
+  border-left: 2px solid var(--user-color, rgb(250, 129, 0));
+  border-top: 2px solid var(--user-color, rgb(250, 129, 0));
+  border-bottom: 2px solid var(--user-color, rgb(250, 129, 0));
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.yRemoteSelectionHead::after {
+  position: absolute;
+  content: ' ';
+  border: 3px solid var(--user-color, rgb(250, 129, 0));
+  border-radius: 4px;
+  left: -4px;
+  top: -5px;
+}
+
+/* Remote cursor label with username */
+.yRemoteSelectionHead > .yRemoteSelectionLabel {
+  position: absolute;
+  top: -1.8em;
+  left: -2px;
+  background-color: var(--user-color, rgb(250, 129, 0));
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Make sure cursor is visible above content */
+.monaco-editor .yRemoteSelection,
+.monaco-editor .yRemoteSelectionHead {
+  z-index: 5;
+}
+
+/* Animation for cursor appearance */
+.yRemoteSelectionHead {
+  animation: cursorFadeIn 0.3s ease-in;
+}
+
+@keyframes cursorFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Different cursor colors for multiple users */
+.yRemoteSelection[data-user-color] {
+  background-color: var(--user-color);
+}
+
+.yRemoteSelectionHead[data-user-color] {
+  border-left-color: var(--user-color);
+  border-top-color: var(--user-color);
+  border-bottom-color: var(--user-color);
+}
+
+.yRemoteSelectionHead[data-user-color]::after {
+  border-color: var(--user-color);
+}
+
+.yRemoteSelectionHead[data-user-color] > .yRemoteSelectionLabel {
+  background-color: var(--user-color);
+}

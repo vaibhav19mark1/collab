@@ -6,14 +6,17 @@ import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { YjsProvider } from "@/contexts/YjsContext";
 import { CollaborativeEditor } from "@/components/editor/CollaborativeEditor";
+import { MonacoEditor } from "@/components/monaco";
 import { toast } from "sonner";
 import { Participant } from "@/types/room.types";
 import RoomChat from "@/components/RoomChat";
 import { useUIStore } from "@/stores/uiStore";
+import { useTheme } from "next-themes";
 
 interface Document {
   id: string;
   title: string;
+  type: "editor" | "code" | "whiteboard";
   content: Record<string, unknown>;
   roomId: string;
   createdAt: string;
@@ -23,6 +26,7 @@ interface Document {
 export default function DocumentPage() {
   const params = useParams();
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
   const roomId = params.roomId as string;
   const documentId = params.documentId as string;
 
@@ -100,12 +104,25 @@ export default function DocumentPage() {
     <div className="flex flex-col h-full bg-background">
       <div className="flex-1 overflow-hidden">
         <YjsProvider config={yjsConfig}>
-          <CollaborativeEditor
-            editable={true}
-            documentTitle={document.title}
-            roomId={roomId}
-            participants={participants}
-          />
+          {document.type === "code" ? (
+            <MonacoEditor
+              documentTitle={document.title}
+              initialLanguage="typescript"
+              theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
+              enableToolbar={true}
+              enableDownload={true}
+              enableCopy={true}
+              roomId={roomId}
+              participants={participants}
+            />
+          ) : (
+            <CollaborativeEditor
+              editable={true}
+              documentTitle={document.title}
+              roomId={roomId}
+              participants={participants}
+            />
+          )}
         </YjsProvider>
       </div>
       <RoomChat roomId={roomId} />

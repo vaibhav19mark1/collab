@@ -1,6 +1,6 @@
 import { Editor } from "@tiptap/react";
 import { WebsocketProvider } from "y-websocket";
-import { PanelLeft, ArrowLeft, MessageSquare } from "lucide-react";
+import { PanelLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -8,13 +8,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Participant as RoomParticipant } from "@/types/room.types";
 import { useUIStore } from "@/stores/uiStore";
 import { useChatStore } from "@/stores/chatStore";
+import { ActiveUsers } from "@/components/shared/ActiveUsers";
+import { BackToRoomButton } from "@/components/shared/BackToRoomButton";
 
 interface Participant extends RoomParticipant {
   color?: string;
@@ -41,41 +39,13 @@ export const EditorHeader = ({
   roomId,
   participants = [],
 }: EditorHeaderProps) => {
-  const { data: session } = useSession();
-  const [activeUserIds, setActiveUserIds] = useState<Set<string>>(new Set());
   const toggleChat = useUIStore((s) => s.toggleChat);
   const unreadCount = useChatStore((s) => s.unreadCountsByRoom[roomId] || 0);
-
-  useEffect(() => {
-    if (!provider) return;
-
-    const updateActiveUsers = () => {
-      const states = provider.awareness.getStates();
-      const active = new Set<string>();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      states.forEach((state: any) => {
-        if (state.user?.id) {
-          active.add(state.user.id);
-        }
-      });
-      setActiveUserIds(active);
-    };
-
-    updateActiveUsers();
-    provider.awareness.on("change", updateActiveUsers);
-
-    return () => {
-      provider.awareness.off("change", updateActiveUsers);
-    };
-  }, [provider]);
 
   if (!editor) return null;
 
   const wordCount = editor.storage.characterCount.words();
   const charCount = editor.storage.characterCount.characters();
-  const activeUsers = participants.filter((p) => activeUserIds.has(p.userId));
-  const displayParticipants = activeUsers.slice(0, 3);
-  const remainingParticipants = Math.max(0, activeUsers.length - 3);
 
   return (
     <div className="h-16 border-b flex items-center justify-between px-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -115,53 +85,11 @@ export const EditorHeader = ({
         </div>
 
         <div className="flex items-center gap-4 border-l pl-4 h-8">
-          <div className="flex -space-x-2">
-            {displayParticipants.map((participant) => {
-              const isActive = activeUserIds.has(participant.userId);
-              const initials = participant.username
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2);
-
-              return (
-                <TooltipProvider key={participant.userId}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background cursor-pointer transition-transform hover:z-10 hover:scale-110">
-                        <AvatarImage
-                          src={
-                            participant.userId === session?.user?._id
-                              ? (session?.user?.image as string)
-                              : participant.avatar
-                          }
-                          alt={participant.username}
-                        />
-                        <AvatarFallback
-                          className="text-xs"
-                          style={{
-                            backgroundColor: participant.color || "#000",
-                            color: "white",
-                          }}
-                        >
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{participant.username}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            })}
-            {remainingParticipants > 0 && (
-              <div className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-medium z-10">
-                +{remainingParticipants}
-              </div>
-            )}
-          </div>
+          <ActiveUsers
+            provider={provider}
+            participants={participants}
+            maxDisplay={3}
+          />
 
           <TooltipProvider>
             <Tooltip>
@@ -186,20 +114,7 @@ export const EditorHeader = ({
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href={`/rooms/${roomId}`}>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Back to Room</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <BackToRoomButton roomId={roomId} />
         </div>
       </div>
     </div>

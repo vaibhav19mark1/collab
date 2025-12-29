@@ -56,7 +56,7 @@ export function Header() {
     : "U";
 
   return (
-    <nav className="w-full z-50 bg-background/80 backdrop-blur-sm shadow-sm border-b sticky top-0">
+    <nav className="w-full z-50 bg-background/80 backdrop-blur-sm shadow-sm border-b sticky top-0 overflow-hidden">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-2">

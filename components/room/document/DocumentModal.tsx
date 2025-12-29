@@ -35,14 +35,14 @@ const types = [
     id: "code",
     label: "Code",
     icon: Code,
-    disabled: true,
-    description: "Code editor (Coming soon)",
+    disabled: false,
+    description: "Code editor with syntax highlighting",
   },
   {
     id: "whiteboard",
     label: "Whiteboard",
     icon: Presentation,
-    disabled: true,
+    disabled: false,
     description: "Visual canvas (Coming soon)",
   },
 ] as const;
@@ -73,7 +73,7 @@ export function DocumentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>Create New Document</DialogTitle>
         </DialogHeader>
@@ -86,6 +86,7 @@ export function DocumentModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Project Requirements"
               required
+              autoComplete="off"
             />
           </div>
 
@@ -139,7 +140,10 @@ export function DocumentModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || !title.trim()}>
+            <Button
+              type="submit"
+              disabled={isLoading || !title.trim() || type === "whiteboard"}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Document
             </Button>

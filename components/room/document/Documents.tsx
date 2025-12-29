@@ -9,6 +9,7 @@ import {
   MoreVertical,
   Pencil,
   Trash,
+  Code,
 } from "lucide-react";
 import {
   Card,
@@ -189,7 +190,11 @@ export const Documents = ({ roomId }: DocumentTabProps) => {
                     <div className="border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/50 transition-all cursor-pointer h-full flex flex-col">
                       <div className="flex items-start justify-between mb-2">
                         <div className="p-2 bg-primary/10 text-primary rounded-md">
-                          <FileText className="h-5 w-5" />
+                          {doc.type === "code" ? (
+                            <Code className="h-5 w-5" />
+                          ) : (
+                            <FileText className="h-5 w-5" />
+                          )}
                         </div>
                       </div>
                       <h3 className="font-medium truncate mb-1 pr-6 group-hover:text-primary transition-colors">
