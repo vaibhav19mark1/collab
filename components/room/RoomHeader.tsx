@@ -4,8 +4,6 @@ import {
   Crown,
   Settings,
   Link,
-  Check,
-  Loader2,
   Trash2,
   LogOut,
   MessageSquare,
@@ -40,12 +38,10 @@ interface RoomHeaderProps {
   isOwner: boolean;
   canManage: boolean;
   socketStatus: "connected" | "connecting" | "disconnected" | "reconnecting";
-  isGeneratingInvite: boolean;
-  copiedInvite: boolean;
   onBack: () => void;
   onToggleChat: () => void;
   onSettings: () => void;
-  onGenerateInvite: () => void;
+  onOpenInviteModal: () => void;
   setConfirmDialog: React.Dispatch<
     React.SetStateAction<{
       open: boolean;
@@ -91,12 +87,10 @@ export const RoomHeader = ({
   isOwner,
   canManage,
   socketStatus,
-  isGeneratingInvite,
-  copiedInvite,
   onBack,
   onToggleChat,
   onSettings,
-  onGenerateInvite,
+  onOpenInviteModal,
   setConfirmDialog,
 }: RoomHeaderProps) => {
   const router = useRouter();
@@ -198,21 +192,14 @@ export const RoomHeader = ({
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    onClick={onGenerateInvite}
-                    disabled={isGeneratingInvite}
+                    onClick={onOpenInviteModal}
                     size="icon"
                   >
-                    {isGeneratingInvite ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : copiedInvite ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Link className="h-4 w-4" />
-                    )}
+                    <Link className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Copy Invite Link</p>
+                  <p>Send Invites</p>
                 </TooltipContent>
               </Tooltip>
             )}

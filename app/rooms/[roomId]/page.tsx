@@ -6,8 +6,8 @@ import { useParams, useRouter, redirect } from "next/navigation";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { Room } from "@/types/room.types";
-import { toast } from "sonner";
 import { RoomSettingsModal } from "@/components/RoomSettingsModal";
+import { InviteModal } from "@/components/InviteModal";
 import RoomChat from "@/components/RoomChat";
 import { Documents } from "@/components/room/document/Documents";
 import { useUIStore } from "@/stores/uiStore";
@@ -32,9 +32,8 @@ export default function RoomDetailsPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [copiedInvite, setCopiedInvite] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -151,37 +150,6 @@ export default function RoomDetailsPage() {
     onRoomDeleted: handleRoomDeleted,
   });
 
-  const handleGenerateInviteLink = async (email?: string) => {
-    setIsGeneratingInvite(true);
-    try {
-      const response = await axios.post(`/api/rooms/${roomId}/invite`, {
-        expiryDays: 7,
-        inviteeEmail: email,
-      });
-
-      const inviteUrl = response.data.inviteUrl;
-      await navigator.clipboard.writeText(inviteUrl);
-      setCopiedInvite(true);
-      setTimeout(() => setCopiedInvite(false), 2000);
-
-      if (response.data.emailSent) {
-        toast.success(`Invite link copied and email sent to ${email}!`);
-      } else {
-        toast.success("Invite link copied to clipboard!");
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(
-          error.response?.data?.error || "Failed to generate invite link"
-        );
-      } else {
-        toast.error("Failed to generate invite link");
-      }
-    } finally {
-      setIsGeneratingInvite(false);
-    }
-  };
-
   const handleCopyCode = async () => {
     if (!room) return;
     await navigator.clipboard.writeText(roomCode);
@@ -234,12 +202,10 @@ export default function RoomDetailsPage() {
         isOwner={isOwner}
         canManage={canManage}
         socketStatus={socketStatus}
-        isGeneratingInvite={isGeneratingInvite}
-        copiedInvite={copiedInvite}
         onBack={() => router.push("/rooms")}
         onToggleChat={toggleChat}
         onSettings={() => setShowSettingsDialog(true)}
-        onGenerateInvite={() => handleGenerateInviteLink()}
+        onOpenInviteModal={() => setShowInviteModal(true)}
         setConfirmDialog={setConfirmDialog}
       />
 
@@ -282,6 +248,13 @@ export default function RoomDetailsPage() {
           onSettingsUpdated={handleSettingsUpdate}
         />
       )}
+
+      {/* Invite Modal */}
+      <InviteModal
+        open={showInviteModal}
+        onOpenChange={setShowInviteModal}
+        roomId={roomId}
+      />
 
       {confirmDialog && (
         <ConfirmDialog

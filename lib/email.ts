@@ -7,7 +7,7 @@ if (!process.env.RESEND_API_KEY) {
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const EMAIL_CONFIG = {
-  from: "Collab Platform <onboarding@resend.dev>", //! Update this with the verified domain later
+  from: "Collab Platform <noreply@collab.vaibhavs.in>", //! Update this with the verified domain later
   replyTo: process.env.SUPPORT_EMAIL || "support@example.com",
 };
 
