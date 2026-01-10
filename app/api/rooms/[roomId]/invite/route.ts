@@ -110,7 +110,7 @@ export async function POST(
     expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
     // Generate base URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000";
 
     // Create invites for all emails
     const invitePromises: Promise<InviteResult>[] = emailsToInvite.map(
