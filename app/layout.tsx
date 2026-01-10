@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import { Header } from "@/components/Header";
 import { SonnerToaster } from "@/lib/sonner-toster";
+import { Analytics } from "@vercel/analytics/next";
 import "@/styles/globals.css";
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default function RootLayout({
         <Providers>
           <Header />
           <main className="flex-1 overflow-y-auto">{children}</main>
+          <Analytics />
           <SonnerToaster />
         </Providers>
       </body>
