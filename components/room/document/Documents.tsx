@@ -10,6 +10,7 @@ import {
   Pencil,
   Trash,
   Code,
+  Presentation,
 } from "lucide-react";
 import {
   Card,
@@ -18,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { JSX, useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -52,6 +53,14 @@ interface DocumentTabProps {
   username: string;
 }
 
+type DocumentType = "code" | "editor" | "whiteboard";
+
+const documentIcon: Record<DocumentType, JSX.Element> = {
+  code: <Code className="h-5 w-5" />,
+  editor: <FileText className="h-5 w-5" />,
+  whiteboard: <Presentation className="h-5 w-5" />,
+};
+
 export const Documents = ({ roomId }: DocumentTabProps) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,11 +70,7 @@ export const Documents = ({ roomId }: DocumentTabProps) => {
   const [editName, setEditName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
-  useEffect(() => {
-    fetchDocuments();
-  }, [roomId]);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       const response = await axios.get(`/api/rooms/${roomId}/document`);
       if (response.data.success) {
@@ -78,7 +83,11 @@ export const Documents = ({ roomId }: DocumentTabProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [roomId, fetchDocuments]);
 
   const createDocument = async (title: string, type: string) => {
     try {
@@ -190,11 +199,7 @@ export const Documents = ({ roomId }: DocumentTabProps) => {
                     <div className="border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/50 transition-all cursor-pointer h-full flex flex-col">
                       <div className="flex items-start justify-between mb-2">
                         <div className="p-2 bg-primary/10 text-primary rounded-md">
-                          {doc.type === "code" ? (
-                            <Code className="h-5 w-5" />
-                          ) : (
-                            <FileText className="h-5 w-5" />
-                          )}
+                          {documentIcon[doc.type as DocumentType]}
                         </div>
                       </div>
                       <h3 className="font-medium truncate mb-1 pr-6 group-hover:text-primary transition-colors">
@@ -206,7 +211,7 @@ export const Documents = ({ roomId }: DocumentTabProps) => {
                     </div>
                   </Link>
 
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity has-[[data-state=open]]:opacity-100">
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity has-data-[state=open]:opacity-100">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">

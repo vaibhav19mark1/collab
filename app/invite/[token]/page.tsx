@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
@@ -51,13 +51,7 @@ export default function InviteAcceptPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-      validateInvite();
-    }
-  }, [token]);
-
-  const validateInvite = async () => {
+  const validateInvite = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -73,7 +67,13 @@ export default function InviteAcceptPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      validateInvite();
+    }
+  }, [token, validateInvite]);
 
   const handleAcceptInvite = async () => {
     if (!session) {

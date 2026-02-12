@@ -43,7 +43,7 @@ const types = [
     label: "Whiteboard",
     icon: Presentation,
     disabled: false,
-    description: "Visual canvas (Coming soon)",
+    description: "Visual canvas",
   },
 ] as const;
 
@@ -140,10 +140,7 @@ export function DocumentModal({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !title.trim() || type === "whiteboard"}
-            >
+            <Button type="submit" disabled={isLoading || !title.trim()}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Document
             </Button>

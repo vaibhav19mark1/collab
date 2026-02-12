@@ -6,6 +6,7 @@ import { SonnerToaster } from "@/lib/sonner-toster";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import "@/styles/globals.css";
+import "@excalidraw/excalidraw/index.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

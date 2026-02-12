@@ -64,7 +64,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
     return () => {
       yMeta.unobserve(observer);
     };
-  }, [doc, initialLanguage]);
+  }, [doc, initialLanguage, language]);
 
   const handleLanguageChange = useCallback(
     (newLanguage: string) => {
@@ -115,7 +115,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
     try {
       await navigator.clipboard.writeText(content);
       toast.success("Code copied to clipboard");
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy code");
     }
   }, [doc]);

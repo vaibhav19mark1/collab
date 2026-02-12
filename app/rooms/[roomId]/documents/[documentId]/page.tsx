@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo, startTransition } from "react";
+import { useEffect, useState, useMemo, startTransition, JSX } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { YjsProvider } from "@/contexts/YjsContext";
 import { CollaborativeEditor } from "@/components/editor/CollaborativeEditor";
 import { MonacoEditor } from "@/components/monaco";
+import { CollaborativeWhiteboard } from "@/components/whiteboard/CollaborativeWhiteboard";
 import { toast } from "sonner";
 import { Participant } from "@/types/room.types";
 import RoomChat from "@/components/RoomChat";
@@ -22,6 +23,8 @@ interface Document {
   createdAt: string;
   updatedAt: string;
 }
+
+type DocumentType = Document["type"];
 
 export default function DocumentPage() {
   const params = useParams();
@@ -85,7 +88,7 @@ export default function DocumentPage() {
             userColor: user.color,
           }
         : null,
-    [documentId, user?.id, user?.name, user?.color]
+    [documentId, user]
   );
 
   if (loading) {
@@ -100,29 +103,44 @@ export default function DocumentPage() {
     return null;
   }
 
+  const documentRenderers: Record<DocumentType, JSX.Element> = {
+    code: (
+      <MonacoEditor
+        documentTitle={document.title}
+        initialLanguage="typescript"
+        theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
+        enableToolbar
+        enableDownload
+        enableCopy
+        roomId={roomId}
+        participants={participants}
+      />
+    ),
+
+    editor: (
+      <CollaborativeEditor
+        editable
+        documentTitle={document.title}
+        roomId={roomId}
+        participants={participants}
+      />
+    ),
+
+    whiteboard: (
+      <CollaborativeWhiteboard
+        editable
+        documentTitle={document.title}
+        roomId={roomId}
+        participants={participants}
+      />
+    ),
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="flex-1 overflow-hidden">
         <YjsProvider config={yjsConfig}>
-          {document.type === "code" ? (
-            <MonacoEditor
-              documentTitle={document.title}
-              initialLanguage="typescript"
-              theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
-              enableToolbar={true}
-              enableDownload={true}
-              enableCopy={true}
-              roomId={roomId}
-              participants={participants}
-            />
-          ) : (
-            <CollaborativeEditor
-              editable={true}
-              documentTitle={document.title}
-              roomId={roomId}
-              participants={participants}
-            />
-          )}
+          {documentRenderers[document.type]}
         </YjsProvider>
       </div>
       <RoomChat roomId={roomId} />
